@@ -133,14 +133,14 @@ export default function Navbar() {
                     className="dropdown-menu dropdown-menu-end"
                     aria-labelledby="userMenu"
                   >
-                    <li>
+                    {/* <li>
                       <button
                         className="dropdown-item"
                         onClick={() => navigate("/profile")}
                       >
                         Profile
                       </button>
-                    </li>
+                    </li> */}
                     {role === "admin" && (
                       <li>
                         <button

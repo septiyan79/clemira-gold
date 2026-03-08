@@ -1,0 +1,62 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "harga_antam",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gramasi",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tanggal",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "harga_antam_new",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gramasi",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tanggal",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "harga_antam_new",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gramasi",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tanggal",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    }
+  ],
+  "fieldOverrides": []
+}

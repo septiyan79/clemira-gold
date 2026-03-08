@@ -213,7 +213,7 @@ const DailyAm = () => {
 
 
   // 🔹 PREDIKSI HARGA ANTAM =================================
-  const FREE_GOLD_API_KEY = "goldapi-7ohhqxsmgmy6axx-io"; 
+  const FREE_GOLD_API_KEY = "goldapi-7ohhqxsmgmy6axx-io";
   useEffect(() => {
     const fetchPrediksiHarga = async () => {
       try {
@@ -445,7 +445,6 @@ const DailyAm = () => {
                                   const meterai = harga > 5000000 ? 10000 : 0;
                                   const total = harga - pph - meterai;
 
-
                                   return (
                                     <table className="table table-sm table-borderless mb-0">
                                       <tbody>
@@ -509,34 +508,59 @@ const DailyAm = () => {
                                 </h6>
 
                                 {(() => {
-                                  const harga = results.clemira;
+                                  const hargaClemira = results.clemira;
+                                  const hargaAntam = results.antam;
+
+                                  const pph = hargaAntam > 10000000 ? hargaAntam * 0.015 : 0;
+                                  const meterai = hargaAntam > 5000000 ? 10000 : 0;
+                                  const totalAntam = hargaAntam - pph - meterai;
+
+                                  const selisih = hargaClemira - totalAntam;
+
                                   return (
                                     <table className="table table-sm table-borderless mb-0">
                                       <tbody>
                                         <tr>
                                           <td className="text-start">Harga ({grams} gr)</td>
                                           <td className="text-end">
-                                            Rp {harga.toLocaleString("id-ID")}
+                                            Rp {hargaClemira.toLocaleString("id-ID")}
                                           </td>
                                         </tr>
+
                                         <tr>
                                           <td className="text-start text-muted">PPh 22</td>
                                           <td className="text-end text-muted">Rp 0</td>
                                         </tr>
+
                                         <tr>
                                           <td className="text-start text-muted">Meterai</td>
                                           <td className="text-end text-muted">Rp 0</td>
                                         </tr>
+
                                         <tr className="border-top fw-bold">
                                           <td className="text-start text-gold">Harga Total</td>
                                           <td className="text-end text-gold">
-                                            Rp {harga.toLocaleString("id-ID")}
+                                            Rp {hargaClemira.toLocaleString("id-ID")}
+                                          </td>
+                                        </tr>
+
+                                        {/* ROW SELISIH */}
+                                        <tr className="fw-bold">
+                                          <td className="text-start text-success">
+                                            Selisih vs Antam
+                                          </td>
+                                          <td className="text-end text-success">
+                                            Rp {selisih.toLocaleString("id-ID")}
                                           </td>
                                         </tr>
                                       </tbody>
                                     </table>
                                   );
                                 })()}
+                                <br />
+                                <a href="https://wa.me/6285975459997?text=Halo,%20Mau%20info%20Buyback%20Antam%20nya%20min!" target="blank" className="btn btn-sm btn-gold w-30">
+                                  ☏ Hubungi Kami
+                                </a>
                               </div>
                             </div>
                           </div>

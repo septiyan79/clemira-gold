@@ -17,7 +17,10 @@ export default function AboutPage() {
                                 <p>Aplikasi ini berawal dari kebutuhan pribadi untuk melacak harga harian emas Antam dan dunia, kemudian berkembang menjadi sistem kecil yang dapat membantu pengguna memahami pergerakan harga emas dengan lebih mudah.</p>
                                 <p>Di Clemira Gold, semua data harga ditampilkan secara real-time, dengan tampilan yang sederhana dan ramah pengguna.</p>
                                 <p>Saya percaya bahwa memahami nilai emas tidak harus rumit — cukup jujur, transparan, dan mudah diakses.</p>
-                                <h6 className="fw-semibold text-gold"><em>- Emasmu, kendalimu.</em></h6>
+                                <h6 className="fw-semibold text-gold"><em>- Emasmu, kendalimu.</em></h6><br/>
+                                <a href="https://wa.me/6285975459997?text=Halo,%20Mau%20info%20Sale%20Antam%20nya%20min!" target="blank" className="btn btn-gold btn-lg w-100">
+                                    ☏ Hubungin kami
+                                </a>
                             </div>
                         </div>
                     </div>

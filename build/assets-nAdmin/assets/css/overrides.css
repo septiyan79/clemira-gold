@@ -1,0 +1,54 @@
+/* === DataTables Overrides - Tema NiceAdmin === */
+
+table.dataTable {
+  background-color: #fff !important;
+  border-color: #e9ecef !important;
+}
+
+table.dataTable thead th {
+  background-color: #f8f9fa !important;
+  color: #495057 !important;
+  border-bottom: 2px solid #dee2e6 !important;
+  font-weight: 600 !important;
+}
+
+table.dataTable tbody td {
+  color: #212529 !important;
+  background-color: #fff !important;
+}
+
+table.dataTable tbody tr:hover {
+  background-color: #f1f3f5 !important;
+}
+
+.dataTables_wrapper .dataTables_length select,
+.dataTables_wrapper .dataTables_filter input {
+  background-color: #fff !important;
+  border: 1px solid #ced4da !important;
+  color: #212529 !important;
+  border-radius: 4px !important;
+  padding: 4px 6px !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  background: #f8f9fa !important;
+  border: 1px solid #dee2e6 !important;
+  color: #212529 !important;
+  border-radius: 4px !important;
+  margin: 0 2px !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background: #009efb !important;
+  color: #fff !important;
+  border-color: #009efb !important;
+}
+
+.dataTables_wrapper .dataTables_info {
+  color: #6c757d !important;
+}
+
+.dataTables_wrapper .dataTables_filter label,
+.dataTables_wrapper .dataTables_length label {
+  color: #495057 !important;
+}
