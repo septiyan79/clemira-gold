@@ -3,6 +3,7 @@ import Nav from "@/components/landing/Nav";
 import Ticker from "@/components/landing/Ticker";
 import PriceChart from "@/components/landing/PriceChart";
 import Calculator from "@/components/landing/Calculator";
+import { prisma } from "@/lib/prisma";
 
 const Logo = () => (
   <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
@@ -12,7 +13,72 @@ const Logo = () => (
   </svg>
 );
 
-export default function HomePage() {
+function formatRupiah(harga: bigint): string {
+  return "Rp " + Number(harga).toLocaleString("id-ID");
+}
+
+function formatTanggal(date: Date): string {
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  }).format(date);
+}
+
+function normalizeGram(gramasi: string): number {
+  return parseFloat(gramasi.replace(/[^\d.]/g, "")) || 0;
+}
+
+async function getLatestHarga() {
+  const latestDates = await prisma.hargaAntam.findMany({
+    distinct: ["tanggal"],
+    orderBy: { tanggal: "desc" },
+    take: 2,
+    select: { tanggal: true },
+  });
+
+  if (latestDates.length === 0) return null;
+
+  const latestDate = latestDates[0].tanggal;
+  const prevDate = latestDates[1]?.tanggal ?? null;
+
+  const [rows, prevRows] = await Promise.all([
+    prisma.hargaAntam.findMany({ where: { tanggal: latestDate } }),
+    prevDate
+      ? prisma.hargaAntam.findMany({ where: { tanggal: prevDate } })
+      : Promise.resolve([]),
+  ]);
+
+  return { tanggal: latestDate, rows, prevRows };
+}
+
+export default async function HomePage() {
+  const hargaData = await getLatestHarga();
+
+  const TARGET_GRAM = [0.5, 1, 2, 5, 10];
+
+  const tableRows = TARGET_GRAM.map((gram) => {
+    const row = hargaData?.rows.find((r) => normalizeGram(r.gramasi) === gram);
+    const harga = row?.harga ?? null;
+    const buyback = harga ? BigInt(Math.round(Number(harga) * 0.915)) : null;
+    return {
+      g: `${gram}g`,
+      jual: harga ? formatRupiah(harga) : "-",
+      bb: buyback ? formatRupiah(buyback) : "-",
+    };
+  });
+
+  const harga1g = hargaData?.rows.find((r) => normalizeGram(r.gramasi) === 1);
+  const prevHarga1g = hargaData?.prevRows.find((r) => normalizeGram(r.gramasi) === 1);
+
+  const changePercent =
+    harga1g && prevHarga1g && Number(prevHarga1g.harga) > 0
+      ? ((Number(harga1g.harga) - Number(prevHarga1g.harga)) / Number(prevHarga1g.harga)) * 100
+      : null;
+
+  const tanggalStr = hargaData ? formatTanggal(hargaData.tanggal) : null;
   return (
     <>
       <Nav />
@@ -56,28 +122,36 @@ export default function HomePage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
                   <div>
                     <p style={{ fontSize: 11, letterSpacing: 2, color: "#7A6E5F", textTransform: "uppercase", marginBottom: 5 }}>Harga Emas Hari Ini</p>
-                    <p style={{ fontSize: 11, color: "#4CAF50" }}>● Update Harian</p>
+                    <p style={{ fontSize: 11, color: tanggalStr ? "#4CAF50" : "#7A6E5F" }}>
+                      {tanggalStr ? `● ${tanggalStr}` : "● Belum ada data"}
+                    </p>
                   </div>
                   <div style={{ background: "rgba(201,168,76,.15)", border: "1px solid rgba(201,168,76,.3)", borderRadius: 6, padding: "5px 12px", fontSize: 11, color: "var(--gold)" }}>Antam Certified</div>
                 </div>
-                <div className="fd" style={{ fontSize: "2.6rem", fontWeight: 600, color: "var(--gold)", lineHeight: 1, marginBottom: 4 }}>Rp 1.185.000</div>
-                <p style={{ fontSize: 13, color: "#6A5E4F", marginBottom: 24 }}>per 1 gram · <span style={{ color: "#4CAF50" }}>▲ +0.65% hari ini</span></p>
+                <div className="fd" style={{ fontSize: "2.6rem", fontWeight: 600, color: "var(--gold)", lineHeight: 1, marginBottom: 4 }}>
+                  {harga1g ? formatRupiah(harga1g.harga) : "—"}
+                </div>
+                <p style={{ fontSize: 13, color: "#6A5E4F", marginBottom: 24 }}>
+                  per 1 gram
+                  {changePercent !== null && (
+                    <>
+                      {" · "}
+                      <span style={{ color: changePercent >= 0 ? "#4CAF50" : "#EF5350" }}>
+                        {changePercent >= 0 ? "▲" : "▼"} {changePercent >= 0 ? "+" : ""}{changePercent.toFixed(2)}% hari ini
+                      </span>
+                    </>
+                  )}
+                </p>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr>
-                      {["Berat", "Harga Jual", "Buyback"].map(h => (
+                      {["Berat", "Harga Jual", "Buyback*"].map(h => (
                         <td key={h} style={{ fontSize: 10, letterSpacing: 1.5, color: "#5A5045", textTransform: "uppercase", paddingBottom: 10, textAlign: h !== "Berat" ? "right" : "left" }}>{h}</td>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { g: "0.5g", jual: "Rp 610.000", bb: "Rp 555.000" },
-                      { g: "1g", jual: "Rp 1.185.000", bb: "Rp 1.090.000" },
-                      { g: "2g", jual: "Rp 2.295.000", bb: "Rp 2.105.000" },
-                      { g: "5g", jual: "Rp 5.660.000", bb: "Rp 5.210.000" },
-                      { g: "10g", jual: "Rp 11.200.000", bb: "Rp 10.300.000" },
-                    ].map(row => (
+                    {tableRows.map(row => (
                       <tr key={row.g} style={{ borderBottom: "1px solid rgba(255,255,255,.05)" }}>
                         <td style={{ padding: "13px 10px", fontSize: 14, color: "var(--gold)" }}>{row.g}</td>
                         <td style={{ padding: "13px 10px", fontSize: 14, color: "#EDE8DE", textAlign: "right" }}>{row.jual}</td>
@@ -86,7 +160,8 @@ export default function HomePage() {
                     ))}
                   </tbody>
                 </table>
-                <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(201,168,76,.15)" }}>
+                <p style={{ fontSize: 10, color: "#4A3E2E", marginTop: 8 }}>*Estimasi buyback ~91.5%</p>
+                <div style={{ marginTop: 12, paddingTop: 16, borderTop: "1px solid rgba(201,168,76,.15)" }}>
                   <Link href="/price" className="btn-gold" style={{ width: "100%", display: "block" }}>Lihat Semua Harga →</Link>
                 </div>
               </div>
