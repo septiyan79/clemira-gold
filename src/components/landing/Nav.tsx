@@ -1,0 +1,77 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+
+const links = [
+  { href: "/price", label: "Harga" },
+  { href: "/calculator", label: "Kalkulator" },
+  { href: "/sale", label: "Promo" },
+  { href: "/about", label: "Tentang" },
+];
+
+export default function Nav() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: "rgba(26,22,18,.9)", backdropFilter: "blur(16px)",
+        borderBottom: "1px solid rgba(201,168,76,.15)",
+      }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+              <polygon points="14,2 26,9 26,21 14,26 2,21 2,9" fill="none" stroke="#C9A84C" strokeWidth="1.5" />
+              <polygon points="14,7 21,11 21,19 14,22 7,19 7,11" fill="rgba(201,168,76,.15)" stroke="#C9A84C" strokeWidth=".8" />
+              <text x="14" y="17" textAnchor="middle" fontSize="8" fill="#C9A84C" fontFamily="serif" fontWeight="600">Au</text>
+            </svg>
+            <span className="fd" style={{ fontSize: 20, fontWeight: 600, color: "#EDE8DE", letterSpacing: ".5px" }}>Clemira Gold</span>
+          </Link>
+
+          {/* Desktop links */}
+          <div style={{ display: "flex", gap: 28, alignItems: "center" }} className="nav-desktop">
+            {links.map(l => (
+              <Link key={l.href} href={l.href} style={{ fontSize: 14, color: "#9A8E7E", textDecoration: "none" }}
+                onMouseOver={e => (e.currentTarget.style.color = "#C9A84C")}
+                onMouseOut={e => (e.currentTarget.style.color = "#9A8E7E")}>
+                {l.label}
+              </Link>
+            ))}
+            <Link href="/login" className="btn-gold" style={{ padding: "10px 22px", fontSize: 14 }}>Masuk</Link>
+          </div>
+
+          {/* Hamburger */}
+          <button onClick={() => setOpen(!open)} style={{ display: "none", flexDirection: "column", gap: 5, cursor: "pointer", padding: 8, background: "none", border: "none" }} className="ham-btn" aria-label="Menu">
+            <span style={{ display: "block", width: 22, height: 1.5, background: "#EDE8DE", transition: "all .3s", borderRadius: 1, transform: open ? "translateY(6.5px) rotate(45deg)" : "none" }} />
+            <span style={{ display: "block", width: 22, height: 1.5, background: "#EDE8DE", transition: "all .3s", borderRadius: 1, opacity: open ? 0 : 1 }} />
+            <span style={{ display: "block", width: 22, height: 1.5, background: "#EDE8DE", transition: "all .3s", borderRadius: 1, transform: open ? "translateY(-6.5px) rotate(-45deg)" : "none" }} />
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile menu */}
+      {open && (
+        <div onClick={() => setOpen(false)} style={{
+          display: "flex", position: "fixed", top: 60, left: 0, right: 0, bottom: 0, zIndex: 99,
+          background: "rgba(26,22,18,.97)", backdropFilter: "blur(20px)",
+          flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 32,
+          borderTop: "1px solid rgba(201,168,76,.15)",
+        }}>
+          {links.map(l => (
+            <Link key={l.href} href={l.href} style={{ fontSize: 22, color: "#EDE8DE", textDecoration: "none", letterSpacing: 1 }}>{l.label}</Link>
+          ))}
+          <Link href="/login" className="btn-gold" style={{ width: 200, textAlign: "center" }}>Masuk Sekarang</Link>
+        </div>
+      )}
+
+      <style>{`
+        @media (max-width: 600px) {
+          .nav-desktop { display: none !important; }
+          .ham-btn { display: flex !important; }
+        }
+      `}</style>
+    </>
+  );
+}
