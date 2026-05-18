@@ -95,6 +95,24 @@ export default async function HomePage() {
       : null;
 
   const tanggalStr = hargaData ? formatTanggal(hargaData.tanggal) : null;
+
+  // Build prices map for Calculator — keyed by gram number, all gramasi from DB
+  const gramSet = new Set<number>();
+  for (const row of hargaData?.rows ?? []) {
+    const g = normalizeGram(row.gramasi);
+    if (g > 0) gramSet.add(g);
+  }
+  const calcPrices: Record<string, { jual: number | null; buyback: number | null }> = {};
+  for (const gram of [...gramSet].sort((a, b) => a - b)) {
+    const key = String(gram);
+    const sellRow = sellRows.find((r) => normalizeGram(r.gramasi) === gram);
+    const bbRow   = bbRows.find((r)   => normalizeGram(r.gramasi) === gram);
+    calcPrices[key] = {
+      jual:    sellRow ? Number(sellRow.harga) : null,
+      buyback: bbRow   ? Number(bbRow.harga)   : null,
+    };
+  }
+
   return (
     <>
       <Nav />
@@ -212,7 +230,7 @@ export default async function HomePage() {
       <PriceChart />
 
       {/* ══ KALKULATOR ══ */}
-      <Calculator />
+      <Calculator prices={calcPrices} />
 
       {/* ══ PROMO / SALE ══ */}
       <section id="sale" style={{ padding: "64px 20px" }}>
@@ -259,8 +277,8 @@ export default async function HomePage() {
               { icon: "◈", title: "Grafik Tren Bulanan", desc: "Pantau pergerakan harga harian, bulanan, hingga tahunan secara visual." },
               { icon: "◎", title: "Kalkulator Buyback", desc: "Hitung estimasi nilai jual kembali emas Anda secara instan dan transparan." },
               { icon: "◉", title: "Sale Harian", desc: "Lihat daftar produk emas yang tersedia untuk dijual hari ini." },
-              { icon: "▣", title: "Dashboard Admin", desc: "Kelola harga, stok produk, dan data pengguna dari satu panel." },
-              { icon: "◆", title: "Jujur & Transparan", desc: "Tidak ada biaya tersembunyi. Semua harga ditampilkan apa adanya." },
+              { icon: "▣", title: "Dashboard Logam Mulia Anda", desc: "Pantau pertumbuhan emas yang kamu miliki dari satu panel." },
+              { icon: "◆", title: "Buyback Tinggi", desc: "Buyback lebih tinggi dari harga buyback butik antam, tanpa potongan." },
             ].map(f => (
               <div key={f.title} className="feat-card">
                 <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(201,168,76,.12)", border: "1px solid rgba(201,168,76,.25)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, fontSize: 20, color: "var(--gold)" }}>
