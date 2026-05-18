@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import Nav from "@/components/landing/Nav";
 import Ticker from "@/components/landing/Ticker";
@@ -59,23 +61,37 @@ export default async function HomePage() {
 
   const TARGET_GRAM = [0.5, 1, 2, 5, 10];
 
+  const isBB = (gramasi: string) => gramasi.toUpperCase().includes("BB");
+  const sellRows = hargaData?.rows.filter((r) => !isBB(r.gramasi)) ?? [];
+  const bbRows   = hargaData?.rows.filter((r) =>  isBB(r.gramasi)) ?? [];
+
   const tableRows = TARGET_GRAM.map((gram) => {
-    const row = hargaData?.rows.find((r) => normalizeGram(r.gramasi) === gram);
-    const harga = row?.harga ?? null;
-    const buyback = harga ? BigInt(Math.round(Number(harga) * 0.915)) : null;
+    const sellRow = sellRows.find((r) => normalizeGram(r.gramasi) === gram);
     return {
-      g: `${gram}g`,
-      jual: harga ? formatRupiah(harga) : "-",
-      bb: buyback ? formatRupiah(buyback) : "-",
+      g:    `${gram}g`,
+      jual: sellRow ? formatRupiah(sellRow.harga) : "-",
     };
   });
 
-  const harga1g = hargaData?.rows.find((r) => normalizeGram(r.gramasi) === 1);
-  const prevHarga1g = hargaData?.prevRows.find((r) => normalizeGram(r.gramasi) === 1);
+  const harga1g   = sellRows.find((r) => normalizeGram(r.gramasi) === 1);
+  const prevHarga1g = hargaData?.prevRows.find((r) => !isBB(r.gramasi) && normalizeGram(r.gramasi) === 1);
+
+  const bb1g      = bbRows.find((r) => normalizeGram(r.gramasi) === 1);
+  const prevBb1g  = hargaData?.prevRows.find((r) => isBB(r.gramasi) && normalizeGram(r.gramasi) === 1);
+
+  const bbChangeDiff    = bb1g && prevBb1g ? Number(bb1g.harga) - Number(prevBb1g.harga) : null;
+  const bbChangePercent = bb1g && prevBb1g && Number(prevBb1g.harga) > 0
+    ? ((Number(bb1g.harga) - Number(prevBb1g.harga)) / Number(prevBb1g.harga)) * 100
+    : null;
 
   const changePercent =
     harga1g && prevHarga1g && Number(prevHarga1g.harga) > 0
       ? ((Number(harga1g.harga) - Number(prevHarga1g.harga)) / Number(prevHarga1g.harga)) * 100
+      : null;
+
+  const changeDiff =
+    harga1g && prevHarga1g
+      ? Number(harga1g.harga) - Number(prevHarga1g.harga)
       : null;
 
   const tanggalStr = hargaData ? formatTanggal(hargaData.tanggal) : null;
@@ -121,23 +137,25 @@ export default async function HomePage() {
               <div className="price-card" style={{ borderRadius: 16, padding: 28 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
                   <div>
-                    <p style={{ fontSize: 11, letterSpacing: 2, color: "#7A6E5F", textTransform: "uppercase", marginBottom: 5 }}>Harga Emas Hari Ini</p>
+                    <p style={{ fontSize: 11, letterSpacing: 2, color: "#7A6E5F", textTransform: "uppercase", marginBottom: 5 }}>Harga Antam Hari Ini</p>
                     <p style={{ fontSize: 11, color: tanggalStr ? "#4CAF50" : "#7A6E5F" }}>
                       {tanggalStr ? `● ${tanggalStr}` : "● Belum ada data"}
                     </p>
                   </div>
-                  <div style={{ background: "rgba(201,168,76,.15)", border: "1px solid rgba(201,168,76,.3)", borderRadius: 6, padding: "5px 12px", fontSize: 11, color: "var(--gold)" }}>Antam Certified</div>
+                  <div style={{ background: "rgba(201,168,76,.15)", border: "1px solid rgba(201,168,76,.3)", borderRadius: 6, padding: "5px 12px", fontSize: 11, color: "var(--gold)" }}>Antam Certicard</div>
                 </div>
                 <div className="fd" style={{ fontSize: "2.6rem", fontWeight: 600, color: "var(--gold)", lineHeight: 1, marginBottom: 4 }}>
                   {harga1g ? formatRupiah(harga1g.harga) : "—"}
                 </div>
                 <p style={{ fontSize: 13, color: "#6A5E4F", marginBottom: 24 }}>
                   per 1 gram
-                  {changePercent !== null && (
+                  {changePercent !== null && changeDiff !== null && (
                     <>
                       {" · "}
                       <span style={{ color: changePercent >= 0 ? "#4CAF50" : "#EF5350" }}>
-                        {changePercent >= 0 ? "▲" : "▼"} {changePercent >= 0 ? "+" : ""}{changePercent.toFixed(2)}% hari ini
+                        {changePercent >= 0 ? "▲" : "▼"}{" "}
+                        {changePercent >= 0 ? "+" : ""}{changePercent.toFixed(2)}%{" "}
+                        ({changeDiff >= 0 ? "+" : "-"}Rp {Math.abs(changeDiff).toLocaleString("id-ID")}) hari ini
                       </span>
                     </>
                   )}
@@ -145,7 +163,7 @@ export default async function HomePage() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr>
-                      {["Berat", "Harga Jual", "Buyback*"].map(h => (
+                      {["Berat", "Harga Jual"].map(h => (
                         <td key={h} style={{ fontSize: 10, letterSpacing: 1.5, color: "#5A5045", textTransform: "uppercase", paddingBottom: 10, textAlign: h !== "Berat" ? "right" : "left" }}>{h}</td>
                       ))}
                     </tr>
@@ -155,13 +173,28 @@ export default async function HomePage() {
                       <tr key={row.g} style={{ borderBottom: "1px solid rgba(255,255,255,.05)" }}>
                         <td style={{ padding: "13px 10px", fontSize: 14, color: "var(--gold)" }}>{row.g}</td>
                         <td style={{ padding: "13px 10px", fontSize: 14, color: "#EDE8DE", textAlign: "right" }}>{row.jual}</td>
-                        <td style={{ padding: "13px 10px", fontSize: 14, color: "#9A8E7E", textAlign: "right" }}>{row.bb}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <p style={{ fontSize: 10, color: "#4A3E2E", marginTop: 8 }}>*Estimasi buyback ~91.5%</p>
-                <div style={{ marginTop: 12, paddingTop: 16, borderTop: "1px solid rgba(201,168,76,.15)" }}>
+
+                {bb1g && (
+                  <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 8, background: "rgba(201,168,76,.07)", border: "1px solid rgba(201,168,76,.18)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+                    <div>
+                      <p style={{ fontSize: 10, letterSpacing: 1.5, color: "#5A5045", textTransform: "uppercase", marginBottom: 3 }}>Buyback 1 gram</p>
+                      <p className="fd" style={{ fontSize: 16, fontWeight: 600, color: "var(--gold)" }}>{formatRupiah(bb1g.harga)}</p>
+                    </div>
+                    {bbChangeDiff !== null && bbChangePercent !== null && (
+                      <span style={{ fontSize: 12, color: bbChangeDiff >= 0 ? "#4CAF50" : "#EF5350", fontWeight: 500 }}>
+                        {bbChangeDiff >= 0 ? "▲" : "▼"}{" "}
+                        {bbChangeDiff >= 0 ? "+" : "-"}Rp {Math.abs(bbChangeDiff).toLocaleString("id-ID")}{" "}
+                        ({bbChangeDiff >= 0 ? "+" : ""}{bbChangePercent.toFixed(2)}%)
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(201,168,76,.15)" }}>
                   <Link href="/price" className="btn-gold" style={{ width: "100%", display: "block" }}>Lihat Semua Harga →</Link>
                 </div>
               </div>
