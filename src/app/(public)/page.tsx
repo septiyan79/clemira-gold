@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import Nav from "@/components/landing/Nav";
 import Ticker from "@/components/landing/Ticker";
 import PriceChart from "@/components/landing/PriceChart";
 import Calculator from "@/components/landing/Calculator";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 const Logo = () => (
   <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
@@ -57,7 +57,8 @@ async function getLatestHarga() {
 }
 
 export default async function HomePage() {
-  const hargaData = await getLatestHarga();
+  const [hargaData, session] = await Promise.all([getLatestHarga(), auth()]);
+  const role = (session?.user as { role?: string })?.role;
 
   const TARGET_GRAM = [0.5, 1, 2, 5, 10];
 
@@ -115,7 +116,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <Nav />
       <Ticker />
 
       {/* ══ HERO ══ */}
@@ -351,7 +351,13 @@ export default async function HomePage() {
               <p style={{ fontSize: 11, letterSpacing: 2, color: "#5A5045", textTransform: "uppercase", marginBottom: 14 }}>Kontak</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <a href="https://wa.me/6285975459997" target="_blank" rel="noreferrer" style={{ fontSize: 14, color: "var(--gold)", textDecoration: "none" }}>WhatsApp</a>
-                <Link href="/login" style={{ fontSize: 14, color: "#6A5E4F", textDecoration: "none" }}>Masuk</Link>
+                {!session ? (
+                  <Link href="/login" style={{ fontSize: 14, color: "#6A5E4F", textDecoration: "none" }}>Masuk</Link>
+                ) : role === "admin" ? (
+                  <Link href="/admin" style={{ fontSize: 14, color: "var(--gold)", textDecoration: "none" }}>Admin Panel</Link>
+                ) : (
+                  <Link href="/profile" style={{ fontSize: 14, color: "#6A5E4F", textDecoration: "none" }}>Profil</Link>
+                )}
               </div>
             </div>
           </div>

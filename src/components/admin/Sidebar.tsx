@@ -19,9 +19,9 @@ const menuGroups = [
   {
     label: "Harga Antam",
     items: [
-      { href: "/admin/harga", icon: "◎", label: "Harga - Harian" },
-      { href: "/admin/harga/monthly", icon: "◎", label: "Harga - Bulanan" },
-      { href: "/admin/harga/yearly", icon: "◎", label: "Harga - Tahunan" },
+      { href: "/admin/price", icon: "◎", label: "Harga - Harian" },
+      { href: "/admin/price/monthly", icon: "◎", label: "Harga - Bulanan" },
+      { href: "/admin/price/yearly", icon: "◎", label: "Harga - Tahunan" },
     ],
   },
   {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Nav from "@/components/landing/Nav";
 import Link from "next/link";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -382,8 +381,6 @@ export default function PricePage() {
 
   return (
     <>
-      <Nav />
-
       {/* Page header */}
       <section style={{ padding: "48px 20px 0", background: "radial-gradient(ellipse 70% 40% at 50% 0%,rgba(201,168,76,.1) 0%,transparent 70%),var(--dark)" }}>
         <div className="wrap">

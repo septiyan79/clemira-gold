@@ -1,4 +1,3 @@
-import Nav from "@/components/landing/Nav";
 import ComingSoonBanner from "@/components/sale/ComingSoonBanner";
 import PromoHero from "@/components/sale/PromoHero";
 import ProductGrid from "@/components/sale/ProductGrid";
@@ -9,7 +8,6 @@ import PromoFooter from "@/components/sale/PromoFooter";
 export default function SalePage() {
   return (
     <>
-      <Nav />
       <ComingSoonBanner />
       <PromoHero />
       <div className="shimmer-line" />

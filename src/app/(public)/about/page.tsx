@@ -1,4 +1,3 @@
-import Nav from "@/components/landing/Nav";
 import AboutHero from "@/components/about/AboutHero";
 import OurStory from "@/components/about/OurStory";
 import OurValues from "@/components/about/OurValues";
@@ -9,7 +8,6 @@ import PromoFooter from "@/components/sale/PromoFooter";
 export default function AboutPage() {
   return (
     <>
-      <Nav />
       <AboutHero />
       <div className="shimmer-line" />
       <OurStory />

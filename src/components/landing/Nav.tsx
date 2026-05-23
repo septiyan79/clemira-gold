@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 const links = [
   { href: "/price", label: "Harga" },
@@ -9,6 +10,32 @@ const links = [
   { href: "/sale", label: "Promo" },
   { href: "/about", label: "Tentang" },
 ];
+
+function AuthButton({ style }: { style?: React.CSSProperties }) {
+  const { data: session, status } = useSession();
+
+  if (status === "loading") return null;
+
+  if (!session) {
+    return (
+      <Link href="/login" className="btn-gold" style={style}>Masuk</Link>
+    );
+  }
+
+  const role = (session.user as { role?: string })?.role;
+
+  if (role === "admin") {
+    return (
+      <Link href="/admin" className="btn-gold" style={style}>Admin Panel</Link>
+    );
+  }
+
+  return (
+    <Link href="/profile" className="btn-outline" style={style}>
+      {session.user?.name ?? "Profil"}
+    </Link>
+  );
+}
 
 export default function Nav() {
   const [open, setOpen] = useState(false);
@@ -39,7 +66,7 @@ export default function Nav() {
                 {l.label}
               </Link>
             ))}
-            <Link href="/login" className="btn-gold" style={{ padding: "10px 22px", fontSize: 14 }}>Masuk</Link>
+            <AuthButton style={{ padding: "10px 22px", fontSize: 14 }} />
           </div>
 
           {/* Hamburger */}
@@ -62,7 +89,7 @@ export default function Nav() {
           {links.map(l => (
             <Link key={l.href} href={l.href} style={{ fontSize: 22, color: "#EDE8DE", textDecoration: "none", letterSpacing: 1 }}>{l.label}</Link>
           ))}
-          <Link href="/login" className="btn-gold" style={{ width: 200, textAlign: "center" }}>Masuk Sekarang</Link>
+          <AuthButton style={{ width: 200, textAlign: "center" }} />
         </div>
       )}
 
