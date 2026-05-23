@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 type MenuItem = { href: string; icon: string; label: string };
 type MenuGroup = {
@@ -45,21 +45,20 @@ const menuGroups: MenuGroup[] = [
   },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const isPricePath = pathname.startsWith("/admin/price");
   const [priceOpen, setPriceOpen] = useState(isPricePath);
 
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return; }
+    onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   return (
-    <aside style={{
-      width: "240px",
-      minHeight: "100vh",
-      background: "rgba(26,22,18,0.95)",
-      borderRight: "1px solid rgba(201,168,76,0.15)",
-      display: "flex",
-      flexDirection: "column",
-      flexShrink: 0,
-    }}>
+    <aside className={`adm-sidebar${open ? " open" : ""}`}>
       {/* Logo */}
       <div style={{
         padding: "24px 20px",

@@ -3,7 +3,7 @@
 import { signOut } from "next-auth/react";
 import type { User } from "next-auth";
 
-export default function AdminHeader({ user }: { user: User | undefined }) {
+export default function AdminHeader({ user, onMenuClick }: { user: User | undefined; onMenuClick: () => void }) {
   return (
     <header style={{
       height: "60px",
@@ -13,11 +13,14 @@ export default function AdminHeader({ user }: { user: User | undefined }) {
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      padding: "0 28px",
+      padding: "0 20px",
       flexShrink: 0,
     }}>
-      <div style={{ fontSize: "14px", color: "var(--muted)" }}>
-        Selamat datang, <span style={{ color: "var(--text)" }}>{user?.name ?? user?.email}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button className="adm-hamburger" onClick={onMenuClick} aria-label="Toggle menu">☰</button>
+        <div className="adm-welcome">
+          Selamat datang, <span style={{ color: "var(--text)" }}>{user?.name ?? user?.email}</span>
+        </div>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
