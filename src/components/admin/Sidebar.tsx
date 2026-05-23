@@ -2,8 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
-const menuGroups = [
+type MenuItem = { href: string; icon: string; label: string };
+type MenuGroup = {
+  label: string;
+  items: (MenuItem | { icon: string; label: string; submenu: MenuItem[] })[];
+};
+
+const menuGroups: MenuGroup[] = [
   {
     label: "Home",
     items: [
@@ -19,9 +26,15 @@ const menuGroups = [
   {
     label: "Harga Antam",
     items: [
-      { href: "/admin/price", icon: "◎", label: "Harga - Harian" },
-      { href: "/admin/price/monthly", icon: "◎", label: "Harga - Bulanan" },
-      { href: "/admin/price/yearly", icon: "◎", label: "Harga - Tahunan" },
+      {
+        icon: "◎",
+        label: "Harga",
+        submenu: [
+          { href: "/admin/price",         icon: "·", label: "Harian"  },
+          { href: "/admin/price/monthly", icon: "·", label: "Bulanan" },
+          { href: "/admin/price/yearly",  icon: "·", label: "Tahunan" },
+        ],
+      },
     ],
   },
   {
@@ -34,6 +47,8 @@ const menuGroups = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const isPricePath = pathname.startsWith("/admin/price");
+  const [priceOpen, setPriceOpen] = useState(isPricePath);
 
   return (
     <aside style={{
@@ -81,7 +96,72 @@ export default function AdminSidebar() {
             }}>
               {group.label}
             </div>
+
             {group.items.map((item) => {
+              if ("submenu" in item) {
+                const isAnyActive = item.submenu.some(s => pathname === s.href);
+                return (
+                  <div key={item.label}>
+                    {/* Parent toggle */}
+                    <button
+                      onClick={() => setPriceOpen(o => !o)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        width: "100%",
+                        padding: "10px 20px",
+                        fontSize: "14px",
+                        color: isAnyActive || priceOpen ? "var(--gold)" : "#7A6E5F",
+                        background: isAnyActive ? "rgba(201,168,76,0.08)" : "transparent",
+                        borderLeft: isAnyActive ? "2px solid var(--gold)" : "2px solid transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        fontFamily: "var(--font-dm-sans), sans-serif",
+                        transition: "all 0.2s",
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ fontSize: "16px" }}>{item.icon}</span>
+                        {item.label}
+                      </span>
+                      <span style={{
+                        fontSize: "10px",
+                        transition: "transform .2s",
+                        transform: priceOpen ? "rotate(180deg)" : "none",
+                      }}>▼</span>
+                    </button>
+
+                    {/* Submenu */}
+                    {priceOpen && (
+                      <div style={{ borderLeft: "1px solid rgba(201,168,76,0.12)", marginLeft: "30px" }}>
+                        {item.submenu.map(sub => {
+                          const isActive = pathname === sub.href;
+                          return (
+                            <Link key={sub.href} href={sub.href} style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              padding: "8px 16px",
+                              fontSize: "13px",
+                              color: isActive ? "var(--gold)" : "#6A5E4F",
+                              background: isActive ? "rgba(201,168,76,0.06)" : "transparent",
+                              borderLeft: isActive ? "2px solid var(--gold)" : "2px solid transparent",
+                              textDecoration: "none",
+                              transition: "all 0.2s",
+                            }}>
+                              <span style={{ fontSize: "18px", lineHeight: 1 }}>{sub.icon}</span>
+                              {sub.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               const isActive = pathname === item.href;
               return (
                 <Link key={item.href} href={item.href} style={{

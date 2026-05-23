@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { fetchHargaFromSheets } from "@/lib/google-sheets";
 import SyncButton from "./SyncButton";
+import DailyTab from "@/components/price/DailyTab";
 
 async function syncHargaAction(): Promise<{ synced: number; error?: string }> {
   "use server";
@@ -89,31 +90,9 @@ export default async function AdminHargaHarian() {
         <SyncButton action={syncHargaAction} />
       </div>
 
-      {rows.length === 0 ? (
-        <p style={{ color: "var(--muted)" }}>Belum ada data harga.</p>
-      ) : (
-        <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 12, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid rgba(255,255,255,.08)" }}>
-                {["Gramasi", "Harga"].map((h) => (
-                  <th key={h} style={{ padding: "14px 20px", textAlign: "left", fontSize: 11, letterSpacing: 1.5, color: "var(--muted)", textTransform: "uppercase", fontWeight: 500 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} style={{ borderBottom: "1px solid rgba(255,255,255,.04)" }}>
-                  <td style={{ padding: "14px 20px", fontSize: 14, color: "var(--text)" }}>{row.gramasi}</td>
-                  <td style={{ padding: "14px 20px", fontSize: 14, color: "var(--gold)", fontFamily: "var(--font-dm-serif), serif" }}>
-                    {formatRupiah(row.harga)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div style={{ background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 16, padding: "28px 24px" }}>
+        <DailyTab />
+      </div>
     </div>
   );
 }
