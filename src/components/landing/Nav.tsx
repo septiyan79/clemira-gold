@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 const links = [
   { href: "/price", label: "Harga" },
@@ -51,11 +52,7 @@ export default function Nav() {
       }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-              <polygon points="14,2 26,9 26,21 14,26 2,21 2,9" fill="none" stroke="#C9A84C" strokeWidth="1.5" />
-              <polygon points="14,7 21,11 21,19 14,22 7,19 7,11" fill="rgba(201,168,76,.15)" stroke="#C9A84C" strokeWidth=".8" />
-              <text x="14" y="17" textAnchor="middle" fontSize="8" fill="#C9A84C" fontFamily="serif" fontWeight="600">Au</text>
-            </svg>
+            <Image src="/Logo CG.png" alt="Clemira Gold" width={26} height={26} style={{ objectFit: "contain" }} />
             <span className="fd" style={{ fontSize: 20, fontWeight: 600, color: "#EDE8DE", letterSpacing: ".5px" }}>Clemira Gold</span>
           </Link>
 

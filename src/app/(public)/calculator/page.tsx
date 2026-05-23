@@ -47,10 +47,10 @@ export default async function CalculatorRoute() {
         <div className="wrap">
           <p className="section-label" style={{ marginBottom: 10 }}>Alat Bantu</p>
           <h1 className="fd" style={{ fontSize: "clamp(1.8rem, 3vw, 2.8rem)", fontWeight: 300, color: "#EDE8DE", marginBottom: 8 }}>
-            Kalkulator <em style={{ color: "var(--gold)" }}>Emas</em>
+            Kalkulator <em style={{ color: "var(--gold)" }}>Antam Certicard</em>
           </h1>
           <p style={{ fontSize: 14, color: "#5A5045", marginBottom: 40 }}>
-            Hitung biaya pembelian dan estimasi buyback emas Antam · Harga realtime
+            Hitung biaya pembelian dan estimasi buyback Logam Mulia Antam · Harga realtime
           </p>
         </div>
       </section>

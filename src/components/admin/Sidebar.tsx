@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 
@@ -67,11 +68,7 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
         alignItems: "center",
         gap: "10px",
       }}>
-        <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-          <polygon points="14,2 26,9 26,21 14,26 2,21 2,9" fill="none" stroke="#C9A84C" strokeWidth="1.5" />
-          <polygon points="14,7 21,11 21,19 14,22 7,19 7,11" fill="rgba(201,168,76,.15)" stroke="#C9A84C" strokeWidth=".8" />
-          <text x="14" y="17" textAnchor="middle" fontSize="8" fill="#C9A84C" fontFamily="serif" fontWeight="600">Au</text>
-        </svg>
+        <Image src="/Logo CG.png" alt="Clemira Gold" width={24} height={24} style={{ objectFit: "contain" }} />
         <div>
           <div className="fd" style={{ fontSize: "15px", fontWeight: 600, color: "#EDE8DE", lineHeight: 1 }}>
             Clemira Gold

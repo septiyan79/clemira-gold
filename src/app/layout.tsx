@@ -19,6 +19,10 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "Clemira Gold – Jual Beli Emas Antam Terpercaya",
   description: "Platform jual beli emas Antam bersertifikat. Transparan, aman, dan terpercaya.",
+  icons: {
+    icon: "/Logo CG.png",
+    apple: "/Logo CG.png",
+  },
 };
 
 export default function RootLayout({

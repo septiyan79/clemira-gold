@@ -1,19 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Image from "next/image";
 import Ticker from "@/components/landing/Ticker";
 import PriceChart from "@/components/landing/PriceChart";
 import Calculator from "@/components/landing/Calculator";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
-const Logo = () => (
-  <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-    <polygon points="14,2 26,9 26,21 14,26 2,21 2,9" fill="none" stroke="#C9A84C" strokeWidth="1.5" />
-    <polygon points="14,7 21,11 21,19 14,22 7,19 7,11" fill="rgba(201,168,76,.15)" stroke="#C9A84C" strokeWidth=".8" />
-    <text x="14" y="17" textAnchor="middle" fontSize="8" fill="#C9A84C" fontFamily="serif" fontWeight="600">Au</text>
-  </svg>
-);
+const Logo = ({ size = 24 }: { size?: number }) =>
+  <Image src="/Logo CG.png" alt="Clemira Gold" width={size} height={size} style={{ objectFit: "contain" }} />;
 
 function formatRupiah(harga: bigint): string {
   return "Rp " + Number(harga).toLocaleString("id-ID");
@@ -296,8 +292,8 @@ export default async function HomePage() {
       <section id="daftar" style={{ padding: "80px 20px", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 70% 70% at 50% 50%,rgba(201,168,76,.12) 0%,transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "relative", maxWidth: 560, margin: "0 auto" }}>
-          <div style={{ width: 56, height: 56, margin: "0 auto 24px", borderRadius: 14, background: "rgba(201,168,76,.12)", border: "1px solid rgba(201,168,76,.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Logo />
+          <div style={{ width: 88, height: 88, margin: "0 auto 28px", borderRadius: 20, background: "rgba(201,168,76,.1)", border: "1px solid rgba(201,168,76,.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Logo size={64} />
           </div>
           <h2 className="fd" style={{ fontSize: "2.6rem", fontWeight: 300, color: "#EDE8DE", lineHeight: 1.15, marginBottom: 16 }}>
             Emasmu,<br /><em style={{ color: "var(--gold)" }}>Kendalimu.</em>

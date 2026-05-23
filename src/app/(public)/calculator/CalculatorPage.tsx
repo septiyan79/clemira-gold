@@ -8,7 +8,7 @@ export type PriceEntry = {
   buyback: number | null;
 };
 
-type Tab = "beli" | "buyback";
+type Tab = "buyback" | "beli";
 
 const fmt = (n: number) => "Rp " + Math.round(n).toLocaleString("id-ID");
 const fmtG = (g: number) =>
@@ -24,11 +24,11 @@ function hitungBuyback(gram: number, bb1g: number) {
 }
 
 export default function CalculatorPage({ entries, date }: { entries: PriceEntry[]; date: string | null }) {
-  const [tab, setTab] = useState<Tab>("beli");
+  const [tab, setTab] = useState<Tab>("buyback");
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "beli",    label: "Kalkulator Beli"    },
     { key: "buyback", label: "Kalkulator Buyback" },
+    // { key: "beli",    label: "Kalkulator Beli"    },
   ];
 
   return (
