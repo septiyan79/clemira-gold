@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 const links = [
@@ -39,6 +40,7 @@ function AuthButton({ style }: { style?: React.CSSProperties }) {
 
 export default function Nav() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <>
@@ -59,13 +61,14 @@ export default function Nav() {
 
           {/* Desktop links */}
           <div style={{ display: "flex", gap: 28, alignItems: "center" }} className="nav-desktop">
-            {links.map(l => (
-              <Link key={l.href} href={l.href} style={{ fontSize: 14, color: "#9A8E7E", textDecoration: "none" }}
-                onMouseOver={e => (e.currentTarget.style.color = "#C9A84C")}
-                onMouseOut={e => (e.currentTarget.style.color = "#9A8E7E")}>
-                {l.label}
-              </Link>
-            ))}
+            {links.map(l => {
+              const active = pathname.startsWith(l.href);
+              return (
+                <Link key={l.href} href={l.href} className={`nav-link${active ? " active" : ""}`}>
+                  {l.label}
+                </Link>
+              );
+            })}
             <AuthButton style={{ padding: "10px 22px", fontSize: 14 }} />
           </div>
 
@@ -86,14 +89,24 @@ export default function Nav() {
           flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 32,
           borderTop: "1px solid rgba(201,168,76,.15)",
         }}>
-          {links.map(l => (
-            <Link key={l.href} href={l.href} style={{ fontSize: 22, color: "#EDE8DE", textDecoration: "none", letterSpacing: 1 }}>{l.label}</Link>
-          ))}
+          {links.map(l => {
+            const active = pathname.startsWith(l.href);
+            return (
+              <Link key={l.href} href={l.href} className={`nav-link-mob${active ? " active" : ""}`}>{l.label}</Link>
+            );
+          })}
           <AuthButton style={{ width: 200, textAlign: "center" }} />
         </div>
       )}
 
       <style>{`
+        .nav-link{font-size:14px;color:#9A8E7E;text-decoration:none;transition:color .2s;position:relative;padding-bottom:2px}
+        .nav-link::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:1px;background:var(--gold);transform:scaleX(0);transition:transform .2s}
+        .nav-link:hover{color:#C9A84C}
+        .nav-link.active{color:#C9A84C}
+        .nav-link.active::after{transform:scaleX(1)}
+        .nav-link-mob{font-size:22px;color:#9A8E7E;text-decoration:none;letter-spacing:1px;transition:color .2s}
+        .nav-link-mob.active{color:#C9A84C}
         @media (max-width: 600px) {
           .nav-desktop { display: none !important; }
           .ham-btn { display: flex !important; }
