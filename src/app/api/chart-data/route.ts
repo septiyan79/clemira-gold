@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -32,5 +34,7 @@ export async function GET(request: NextRequest) {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, v]) => ({ date, sell: v.sell ?? null, bb: v.bb ?? null }));
 
-  return Response.json(data);
+  return Response.json(data, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }

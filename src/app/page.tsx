@@ -233,7 +233,7 @@ export default async function HomePage() {
       <Calculator prices={calcPrices} />
 
       {/* ══ PROMO / SALE ══ */}
-      <section id="sale" style={{ padding: "64px 20px" }}>
+      {/* <section id="sale" style={{ padding: "64px 20px" }}>
         <div className="wrap">
           <div style={{ textAlign: "center", marginBottom: 40 }}>
             <p className="section-label">Penawaran Terbatas</p>
@@ -260,7 +260,7 @@ export default async function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* ══ FITUR ══ */}
       <section id="fitur" style={{ padding: "64px 20px", background: "rgba(0,0,0,.2)" }}>
