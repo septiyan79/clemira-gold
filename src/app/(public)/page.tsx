@@ -133,7 +133,7 @@ export default async function HomePage() {
               <div className="fu d4" style={{ display: "flex", gap: 36, marginTop: 48, paddingTop: 32, borderTop: "1px solid rgba(255,255,255,.07)" }}>
                 {[
                   { num: "Harian", label: "Update Harga" },
-                  { num: "100%", label: "Produk Resmi" },
+                  { num: "100%", label: "Produk Asli" },
                   { num: "Jujur", label: "& Transparan" },
                 ].map(s => (
                   <div key={s.label}>
@@ -267,7 +267,7 @@ export default async function HomePage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }} className="feat-grid">
             {[
-              { icon: "◷", title: "Update Harga Harian", desc: "Harga update setiap hari kerja pukul 08.00 WIB sesuai harga resmi Antam." },
+              { icon: "◷", title: "Update Harga Harian", desc: "Harga update setiap hari kerja pukul 10.00 WIB sesuai harga resmi Antam." },
               { icon: "◈", title: "Grafik Tren Bulanan", desc: "Pantau pergerakan harga harian, bulanan, hingga tahunan secara visual." },
               { icon: "◎", title: "Kalkulator Buyback", desc: "Hitung estimasi nilai jual kembali emas Anda secara instan dan transparan." },
               { icon: "◉", title: "Sale Harian", desc: "Lihat daftar produk emas yang tersedia untuk dijual hari ini." },

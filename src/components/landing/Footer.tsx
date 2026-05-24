@@ -19,7 +19,7 @@ export default async function Footer() {
                 <span className="fd" style={{ fontSize: 16, color: "#EDE8DE" }}>Clemira Gold</span>
               </div>
               <p style={{ fontSize: 13, color: "#5A5045", lineHeight: 1.7, maxWidth: 220 }}>
-                Platform pantau harga emas Antam bersertifikat. Jujur, transparan, dan mudah diakses.
+                Platform pantau harga emas Antam Certicard. Jujur, transparan, dan mudah diakses.
               </p>
               <p style={{ fontSize: 12, color: "#3A342A", marginTop: 12 }}>📍 Indonesia</p>
             </div>
