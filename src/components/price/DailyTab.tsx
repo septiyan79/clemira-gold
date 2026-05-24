@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { todayWIB, fmt, formatDateShort, formatDateFull, DiffCell, TableWrap, Th, Td, EmptyState, Spinner } from "./shared";
-import type { DailyData, DailyRow } from "./shared";
+import type { DailyData, DailyRow, PredictionData } from "./shared";
 import SharePriceButton from "./SharePriceButton";
+import PredictionCard from "./PredictionCard";
 
 export default function DailyTab() {
-  const [date, setDate]       = useState(todayWIB);
-  const [data, setData]       = useState<DailyData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [date, setDate]           = useState(todayWIB);
+  const [data, setData]           = useState<DailyData | null>(null);
+  const [loading, setLoading]     = useState(false);
+  const [prediction, setPrediction] = useState<PredictionData | null>(null);
 
   const fetchData = useCallback(async (d: string) => {
     setLoading(true);
@@ -19,6 +21,13 @@ export default function DailyTab() {
   }, []);
 
   useEffect(() => { fetchData(date); }, [date, fetchData]);
+
+  useEffect(() => {
+    fetch("/api/price/predict")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d && !d.error) setPrediction(d); })
+      .catch(() => {});
+  }, []);
 
   const gramMap = new Map<number, { sell?: DailyRow; bb?: DailyRow }>();
   for (const r of data?.rows ?? []) {
@@ -107,6 +116,9 @@ export default function DailyTab() {
               </span>
             )}
           </div>
+        )}
+        {date === todayWIB() && prediction !== null && (
+          <PredictionCard {...prediction} todaySell={sell1g} />
         )}
       </div>
 

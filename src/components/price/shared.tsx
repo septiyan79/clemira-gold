@@ -9,6 +9,15 @@ export interface DayEntry   { date: string; sell: number | null; bb: number | nu
 export interface MonthEntry { month: number; sell: number | null; bb: number | null }
 export interface MonthlyData { days: DayEntry[]; prevLastSell: number | null; prevLastBb: number | null }
 export interface YearlyData  { months: MonthEntry[]; prevLastSell: number | null; prevLastBb: number | null }
+export interface PredictionData {
+  predictedDate: string;
+  predictedSell: number;
+  lower: number;
+  upper: number;
+  trend: number;
+  basedOnDate: string;
+  dataPoints: number;
+}
 
 export function todayWIB() {
   return new Date().toLocaleDateString("sv", { timeZone: "Asia/Jakarta" });
