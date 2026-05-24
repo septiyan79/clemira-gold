@@ -24,11 +24,12 @@ function formatDateFull(iso: string) {
 }
 
 function diffLabel(diff: number) {
-  if (diff === 0) return { text: "Rp 0", color: "#5A5045" };
+  if (diff === 0) return { text: "Rp 0", color: "#5A5045", up: null };
   const up = diff > 0;
   return {
-    text: (up ? "▲ +" : "▼ -") + "Rp " + Math.abs(diff).toLocaleString("id-ID"),
+    text: (up ? "+" : "-") + "Rp " + Math.abs(diff).toLocaleString("id-ID"),
     color: up ? "#4CAF50" : "#EF5350",
+    up,
   };
 }
 
@@ -102,61 +103,76 @@ export async function GET(req: NextRequest): Promise<Response> {
   const bb1gDiff   = diffBb1g !== null ? diffLabel(diffBb1g) : null;
   const bb1gPct    = pctBb1g  !== null ? pctLabel(pctBb1g)   : null;
 
+  const W = 1080;
+  const H = 580;
+
+  // Inline SVG arrow (up = true → triangle up, false → down)
+  const Arrow = ({ up }: { up: boolean }) => (
+    <svg width="18" height="18" viewBox="0 0 18 18" style={{ marginRight: 6 }}>
+      {up
+        ? <polygon points="9,3 17,15 1,15" fill={up ? "#4CAF50" : "#EF5350"} />
+        : <polygon points="9,15 17,3 1,3"  fill="#EF5350" />
+      }
+    </svg>
+  );
+
   const element = (
     <div
       style={{
-        width: 1080,
-        height: 1080,
+        width: W,
+        height: H,
         background: "#1A1510",
         display: "flex",
         flexDirection: "column",
-        padding: "72px 80px",
+        padding: "44px 64px",
         fontFamily: "DM Sans",
         position: "relative",
       }}
     >
-      {/* Subtle gold border top */}
+      {/* Gold top border */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg, #C9A84C, #E8D49A, #C9A84C)", display: "flex" }} />
 
       {/* Header */}
-      <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 48 }}>
+      <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontSize: 38, fontWeight: 500, color: "#C9A84C", letterSpacing: 4 }}>CLEMIRA</span>
-            <span style={{ fontSize: 38, fontWeight: 400, color: "#EDE8DE", letterSpacing: 4 }}>GOLD</span>
+            <span style={{ fontSize: 36, fontWeight: 500, color: "#C9A84C", letterSpacing: 4 }}>CLEMIRA</span>
+            <span style={{ fontSize: 36, fontWeight: 400, color: "#EDE8DE", letterSpacing: 4 }}>GOLD</span>
           </div>
-          <span style={{ fontSize: 14, color: "#5A5045", letterSpacing: 3, marginTop: 4 }}>UPDATE HARGA EMAS ANTAM</span>
+          <span style={{ fontSize: 16, color: "#7A6E5F", letterSpacing: 3, marginTop: 6 }}>UPDATE HARGA EMAS ANTAM</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-          <span style={{ fontSize: 15, color: "#7A6E5F", letterSpacing: 0.5 }}>{formatDateFull(resolvedDate)}</span>
-          <span style={{ fontSize: 13, color: "#4A3E2E", marginTop: 6, letterSpacing: 1 }}>1 GRAM</span>
+          <span style={{ fontSize: 18, color: "#9A8E7E", letterSpacing: 0.5 }}>{formatDateFull(resolvedDate)}</span>
+          <span style={{ fontSize: 15, color: "#6A5E4E", marginTop: 6, letterSpacing: 2 }}>1 GRAM</span>
         </div>
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: "rgba(201,168,76,0.25)", display: "flex", marginBottom: 56 }} />
+      <div style={{ height: 1, background: "rgba(201,168,76,0.25)", display: "flex", marginBottom: 28 }} />
 
       {/* Prices */}
-      <div style={{ display: "flex", flexDirection: "row", gap: 48, marginBottom: 56, flex: 1 }}>
+      <div style={{ display: "flex", flexDirection: "row", gap: 32, flex: 1 }}>
         {/* Harga Jual */}
         <div style={{
           display: "flex", flexDirection: "column", flex: 1,
-          background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)",
-          borderRadius: 16, padding: "40px 36px",
+          background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 14, padding: "28px 32px",
         }}>
-          <span style={{ fontSize: 12, letterSpacing: 3, color: "#5A5045", fontWeight: 500, marginBottom: 16 }}>HARGA JUAL</span>
-          <span style={{ fontSize: sell1g !== null ? 54 : 32, fontWeight: 500, color: "#EDE8DE", lineHeight: 1.1 }}>
+          <span style={{ fontSize: 15, letterSpacing: 3, color: "#8A7E6E", fontWeight: 500, marginBottom: 14 }}>HARGA JUAL</span>
+          <span style={{ fontSize: 50, fontWeight: 500, color: "#EDE8DE", lineHeight: 1.05 }}>
             {sell1g !== null ? fmt(sell1g) : "—"}
           </span>
           {sell1gDiff && (
-            <div style={{ display: "flex", flexDirection: "column", marginTop: 24, gap: 10 }}>
-              <span style={{ fontSize: 22, color: sell1gDiff.color, fontWeight: 400 }}>{sell1gDiff.text}</span>
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginTop: 18, gap: 12 }}>
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+                {sell1gDiff.up !== null && <Arrow up={sell1gDiff.up} />}
+                <span style={{ fontSize: 22, color: sell1gDiff.color, fontWeight: 400 }}>{sell1gDiff.text}</span>
+              </div>
               {sell1gPct && (
                 <div style={{
-                  display: "flex", alignSelf: "flex-start",
-                  padding: "6px 16px", borderRadius: 24,
+                  display: "flex", padding: "5px 14px", borderRadius: 24,
                   border: sell1gPct.border,
-                  background: sell1gPct.color === "#4CAF50" ? "rgba(76,175,80,0.08)" : "rgba(239,83,80,0.08)",
+                  background: sell1gPct.color === "#4CAF50" ? "rgba(76,175,80,0.1)" : "rgba(239,83,80,0.1)",
                 }}>
                   <span style={{ fontSize: 18, color: sell1gPct.color }}>{sell1gPct.text}</span>
                 </div>
@@ -164,7 +180,7 @@ export async function GET(req: NextRequest): Promise<Response> {
             </div>
           )}
           {!sell1gDiff && sell1g !== null && (
-            <span style={{ fontSize: 15, color: "#3A342A", marginTop: 20 }}>Tidak ada data pembanding</span>
+            <span style={{ fontSize: 15, color: "#4A3E2E", marginTop: 18 }}>Tidak ada data pembanding</span>
           )}
         </div>
 
@@ -172,21 +188,23 @@ export async function GET(req: NextRequest): Promise<Response> {
         <div style={{
           display: "flex", flexDirection: "column", flex: 1,
           background: "rgba(201,168,76,0.04)", border: "1px solid rgba(201,168,76,0.18)",
-          borderRadius: 16, padding: "40px 36px",
+          borderRadius: 14, padding: "28px 32px",
         }}>
-          <span style={{ fontSize: 12, letterSpacing: 3, color: "#5A5045", fontWeight: 500, marginBottom: 16 }}>HARGA BUYBACK</span>
-          <span style={{ fontSize: bb1g !== null ? 54 : 32, fontWeight: 500, color: "#C9A84C", lineHeight: 1.1 }}>
+          <span style={{ fontSize: 15, letterSpacing: 3, color: "#8A7E6E", fontWeight: 500, marginBottom: 14 }}>HARGA BUYBACK</span>
+          <span style={{ fontSize: 50, fontWeight: 500, color: "#C9A84C", lineHeight: 1.05 }}>
             {bb1g !== null ? fmt(bb1g) : "—"}
           </span>
           {bb1gDiff && (
-            <div style={{ display: "flex", flexDirection: "column", marginTop: 24, gap: 10 }}>
-              <span style={{ fontSize: 22, color: bb1gDiff.color, fontWeight: 400 }}>{bb1gDiff.text}</span>
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginTop: 18, gap: 12 }}>
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+                {bb1gDiff.up !== null && <Arrow up={bb1gDiff.up} />}
+                <span style={{ fontSize: 22, color: bb1gDiff.color, fontWeight: 400 }}>{bb1gDiff.text}</span>
+              </div>
               {bb1gPct && (
                 <div style={{
-                  display: "flex", alignSelf: "flex-start",
-                  padding: "6px 16px", borderRadius: 24,
+                  display: "flex", padding: "5px 14px", borderRadius: 24,
                   border: bb1gPct.border,
-                  background: bb1gPct.color === "#4CAF50" ? "rgba(76,175,80,0.08)" : "rgba(239,83,80,0.08)",
+                  background: bb1gPct.color === "#4CAF50" ? "rgba(76,175,80,0.1)" : "rgba(239,83,80,0.1)",
                 }}>
                   <span style={{ fontSize: 18, color: bb1gPct.color }}>{bb1gPct.text}</span>
                 </div>
@@ -194,25 +212,25 @@ export async function GET(req: NextRequest): Promise<Response> {
             </div>
           )}
           {!bb1gDiff && bb1g !== null && (
-            <span style={{ fontSize: 15, color: "#3A342A", marginTop: 20 }}>Tidak ada data pembanding</span>
+            <span style={{ fontSize: 15, color: "#4A3E2E", marginTop: 18 }}>Tidak ada data pembanding</span>
           )}
         </div>
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: "rgba(201,168,76,0.2)", display: "flex", marginBottom: 36 }} />
+      <div style={{ height: 1, background: "rgba(201,168,76,0.18)", display: "flex", marginTop: 28, marginBottom: 20 }} />
 
       {/* Footer */}
       <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 15, color: "#4A3E2E", letterSpacing: 0.5 }}>Data: Antam · clemira.id</span>
-        <span style={{ fontSize: 15, color: "#4A3E2E", letterSpacing: 0.5 }}>Jual Beli Emas Antam Terpercaya</span>
+        <span style={{ fontSize: 16, color: "#5A5045", letterSpacing: 0.5 }}>Data: Antam · clemira.id</span>
+        <span style={{ fontSize: 16, color: "#5A5045", letterSpacing: 0.5 }}>Jual Beli Emas Antam Terpercaya</span>
       </div>
     </div>
   );
 
   return new ImageResponse(element, {
-    width: 1080,
-    height: 1080,
+    width: W,
+    height: H,
     fonts: [
       { name: "DM Sans", data: fontRegular, weight: 400, style: "normal" },
       { name: "DM Sans", data: fontMedium,  weight: 500, style: "normal" },
