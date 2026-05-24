@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { todayWIB, fmt, formatDateShort, formatDateFull, DiffCell, TableWrap, Th, Td, EmptyState, Spinner } from "./shared";
 import type { DailyData, DailyRow } from "./shared";
+import SharePriceButton from "./SharePriceButton";
 
 export default function DailyTab() {
   const [date, setDate]       = useState(todayWIB);
@@ -105,6 +106,14 @@ export default function DailyTab() {
           </div>
         )}
       </div>
+
+      {data?.date && (sell1g !== null || bb1g !== null) && (
+        <SharePriceButton
+          date={data.date}
+          sell1g={sell1g}
+          bb1g={bb1g}
+        />
+      )}
 
       {loading ? <Spinner /> : entries.length === 0 ? (
         <EmptyState msg="Tidak ada data untuk tanggal ini." />
