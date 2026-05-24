@@ -6,11 +6,37 @@ interface SharePriceButtonProps {
   date: string;
   sell1g: number | null;
   bb1g: number | null;
+  diff1g: number | null;
 }
 
-export default function SharePriceButton({ date, sell1g, bb1g }: SharePriceButtonProps) {
+function formatDateShort(iso: string) {
+  const d = new Date(iso + "T00:00:00Z");
+  const day   = String(d.getUTCDate()).padStart(2, "0");
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const month = months[d.getUTCMonth()];
+  const year  = String(d.getUTCFullYear()).slice(2);
+  return `${day} ${month} ${year}`;
+}
+
+function buildWhatsAppText(date: string, diff1g: number | null) {
+  const diffLine = diff1g !== null && diff1g !== 0
+    ? `${diff1g > 0 ? "▲" : "▼"} ${Math.abs(diff1g).toLocaleString("id-ID")} / gr`
+    : null;
+
+  const lines = [
+    "Update Harga Dasar Antam",
+    ...(diffLine ? [diffLine] : []),
+    formatDateShort(date),
+    "",
+    "Clemira Gold",
+    "https://clemira-gold.vercel.app/",
+  ];
+  return lines.join("\n");
+}
+
+export default function SharePriceButton({ date, sell1g, bb1g, diff1g }: SharePriceButtonProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
 
   if (!date || (sell1g === null && bb1g === null)) return null;
 
@@ -23,20 +49,19 @@ export default function SharePriceButton({ date, sell1g, bb1g }: SharePriceButto
 
       const blob = await res.blob();
       const file = new File([blob], `clemira-gold-${date}.png`, { type: "image/png" });
+      const text = buildWhatsAppText(date, diff1g);
 
       if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "Harga Emas Antam",
-          text: `Update harga emas Antam dari Clemira Gold — ${date}`,
-        });
+        await navigator.share({ files: [file], title: "Update Harga Dasar Antam", text });
       } else {
+        // Download image then open WhatsApp with message pre-filled
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
+        const a   = document.createElement("a");
+        a.href     = url;
         a.download = `clemira-gold-${date}.png`;
         a.click();
         URL.revokeObjectURL(url);
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
       }
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
@@ -47,7 +72,7 @@ export default function SharePriceButton({ date, sell1g, bb1g }: SharePriceButto
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, margin: "20px 0" }}>
+    <div className="spb" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
       <button
         onClick={handleShare}
         disabled={loading}
@@ -64,7 +89,6 @@ export default function SharePriceButton({ date, sell1g, bb1g }: SharePriceButto
           cursor: loading ? "wait" : "pointer",
           border: "none",
           letterSpacing: 0.5,
-          transition: "opacity 0.2s",
         }}
       >
         {loading ? (
@@ -80,9 +104,7 @@ export default function SharePriceButton({ date, sell1g, bb1g }: SharePriceButto
           </>
         )}
       </button>
-      {error && (
-        <p style={{ fontSize: 12, color: "#EF5350", margin: 0 }}>{error}</p>
-      )}
+      {error && <p style={{ fontSize: 12, color: "#EF5350", margin: 0 }}>{error}</p>}
       <p style={{ fontSize: 11, color: "#4A3E2E", margin: 0, letterSpacing: 0.5 }}>
         Gambar diunduh lalu dibagikan ke WhatsApp
       </p>

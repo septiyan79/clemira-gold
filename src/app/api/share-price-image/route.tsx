@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import QRCode from "qrcode";
 import fs from "fs";
 import path from "path";
 
@@ -52,9 +53,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     select: { tanggal: true },
   });
 
-  if (!target) {
-    return new Response("No data", { status: 404 });
-  }
+  if (!target) return new Response("No data", { status: 404 });
 
   const prev = await prisma.hargaAntam.findFirst({
     where: { tanggal: { lt: target.tanggal } },
@@ -70,79 +69,89 @@ export async function GET(req: NextRequest): Promise<Response> {
   ]);
 
   const serialize = (r: { gramasi: string; harga: bigint }) => ({
-    gramasi: r.gramasi,
     harga: Number(r.harga),
     isBB: isBB(r.gramasi),
     gram: normG(r.gramasi),
   });
 
-  const cur  = rows.map(serialize);
-  const prv  = prevRows.map(serialize);
+  const cur = rows.map(serialize);
+  const prv = prevRows.map(serialize);
 
   const sell1g     = cur.find(r => r.gram === 1 && !r.isBB)?.harga ?? null;
-  const bb1g       = cur.find(r => r.gram === 1 && r.isBB)?.harga ?? null;
+  const bb1g       = cur.find(r => r.gram === 1 && r.isBB)?.harga  ?? null;
   const prevSell1g = prv.find(r => r.gram === 1 && !r.isBB)?.harga ?? null;
-  const prevBb1g   = prv.find(r => r.gram === 1 && r.isBB)?.harga ?? null;
+  const prevBb1g   = prv.find(r => r.gram === 1 && r.isBB)?.harga  ?? null;
 
   const diff1g   = sell1g !== null && prevSell1g !== null ? sell1g - prevSell1g : null;
   const pct1g    = diff1g !== null && prevSell1g ? (diff1g / prevSell1g) * 100 : null;
-  const diffBb1g = bb1g !== null && prevBb1g !== null ? bb1g - prevBb1g : null;
-  const pctBb1g  = diffBb1g !== null && prevBb1g ? (diffBb1g / prevBb1g) * 100 : null;
+  const diffBb1g = bb1g   !== null && prevBb1g   !== null ? bb1g   - prevBb1g   : null;
+  const pctBb1g  = diffBb1g !== null && prevBb1g ? (diffBb1g / prevBb1g) * 100  : null;
 
   const resolvedDate = target.tanggal.toISOString().slice(0, 10);
 
-  const fontRegular = fs.readFileSync(
-    path.join(process.cwd(), "public", "fonts", "DMSans-Regular.ttf")
-  );
-  const fontMedium = fs.readFileSync(
-    path.join(process.cwd(), "public", "fonts", "DMSans-Medium.ttf")
-  );
+  const [fontRegular, fontMedium, fontCormorant, logoBuffer, qrBuffer] = await Promise.all([
+    Promise.resolve(fs.readFileSync(path.join(process.cwd(), "public", "fonts", "DMSans-Regular.ttf"))),
+    Promise.resolve(fs.readFileSync(path.join(process.cwd(), "public", "fonts", "DMSans-Medium.ttf"))),
+    Promise.resolve(fs.readFileSync(path.join(process.cwd(), "public", "fonts", "CormorantGaramond-SemiBold.ttf"))),
+    Promise.resolve(fs.readFileSync(path.join(process.cwd(), "public", "fonts", "logo-small.png"))),
+    QRCode.toBuffer("https://clemira-gold.vercel.app/", {
+      type: "png",
+      color: { dark: "#C9A84C", light: "#1A1510" },
+      width: 120,
+      margin: 1,
+    }),
+  ]);
 
-  const sell1gDiff = diff1g !== null ? diffLabel(diff1g) : null;
-  const sell1gPct  = pct1g  !== null ? pctLabel(pct1g)  : null;
+  const logoSrc = `data:image/png;base64,${logoBuffer.toString("base64")}`;
+  const qrSrc   = `data:image/png;base64,${qrBuffer.toString("base64")}`;
+
+  const sell1gDiff = diff1g   !== null ? diffLabel(diff1g)   : null;
+  const sell1gPct  = pct1g    !== null ? pctLabel(pct1g)     : null;
   const bb1gDiff   = diffBb1g !== null ? diffLabel(diffBb1g) : null;
   const bb1gPct    = pctBb1g  !== null ? pctLabel(pctBb1g)   : null;
 
   const W = 1080;
-  const H = 580;
+  const H = 650;
 
-  // Inline SVG arrow (up = true → triangle up, false → down)
   const Arrow = ({ up }: { up: boolean }) => (
     <svg width="18" height="18" viewBox="0 0 18 18" style={{ marginRight: 6 }}>
       {up
-        ? <polygon points="9,3 17,15 1,15" fill={up ? "#4CAF50" : "#EF5350"} />
+        ? <polygon points="9,3 17,15 1,15" fill="#4CAF50" />
         : <polygon points="9,15 17,3 1,3"  fill="#EF5350" />
       }
     </svg>
   );
 
   const element = (
-    <div
-      style={{
-        width: W,
-        height: H,
-        background: "#1A1510",
-        display: "flex",
-        flexDirection: "column",
-        padding: "44px 64px",
-        fontFamily: "DM Sans",
-        position: "relative",
-      }}
-    >
+    <div style={{
+      width: W, height: H,
+      background: "#1A1510",
+      display: "flex", flexDirection: "column",
+      padding: "44px 64px",
+      fontFamily: "DM Sans",
+      position: "relative",
+    }}>
       {/* Gold top border */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg, #C9A84C, #E8D49A, #C9A84C)", display: "flex" }} />
 
       {/* Header */}
-      <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontSize: 36, fontWeight: 500, color: "#C9A84C", letterSpacing: 4 }}>CLEMIRA</span>
-            <span style={{ fontSize: 36, fontWeight: 400, color: "#EDE8DE", letterSpacing: 4 }}>GOLD</span>
+      <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+        {/* Brand: logo + text */}
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 16 }}>
+          <img src={logoSrc} width={60} height={60} style={{ objectFit: "contain" }} />
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {/* Match web nav: Cormorant Garamond 600, "Clemira Gold" */}
+            <span style={{ fontFamily: "Cormorant", fontSize: 40, fontWeight: 600, color: "#EDE8DE", letterSpacing: 1 }}>
+              Clemira Gold
+            </span>
+            <span style={{ fontSize: 14, color: "#7A6E5F", letterSpacing: 2, marginTop: 3 }}>
+              Jual Beli Logam Mulia Antam Terpercaya
+            </span>
           </div>
-          <span style={{ fontSize: 16, color: "#7A6E5F", letterSpacing: 3, marginTop: 6 }}>UPDATE HARGA EMAS ANTAM</span>
         </div>
+        {/* Date */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-          <span style={{ fontSize: 18, color: "#9A8E7E", letterSpacing: 0.5 }}>{formatDateFull(resolvedDate)}</span>
+          <span style={{ fontSize: 22, color: "#9A8E7E", letterSpacing: 0.5 }}>{formatDateFull(resolvedDate)}</span>
           <span style={{ fontSize: 15, color: "#6A5E4E", marginTop: 6, letterSpacing: 2 }}>1 GRAM</span>
         </div>
       </div>
@@ -150,20 +159,25 @@ export async function GET(req: NextRequest): Promise<Response> {
       {/* Divider */}
       <div style={{ height: 1, background: "rgba(201,168,76,0.25)", display: "flex", marginBottom: 28 }} />
 
+      {/* Section label above cards */}
+      <span style={{ fontSize: 13, letterSpacing: 3, color: "#6A5E4E", fontWeight: 500, marginBottom: 16 }}>
+        UPDATE HARGA DASAR ANTAM
+      </span>
+
       {/* Prices */}
       <div style={{ display: "flex", flexDirection: "row", gap: 32, flex: 1 }}>
         {/* Harga Jual */}
         <div style={{
           display: "flex", flexDirection: "column", flex: 1,
           background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 14, padding: "28px 32px",
+          borderRadius: 14, padding: "24px 32px",
         }}>
-          <span style={{ fontSize: 15, letterSpacing: 3, color: "#8A7E6E", fontWeight: 500, marginBottom: 14 }}>HARGA JUAL</span>
+          <span style={{ fontSize: 14, letterSpacing: 3, color: "#8A7E6E", fontWeight: 500, marginBottom: 12 }}>HARGA JUAL</span>
           <span style={{ fontSize: 50, fontWeight: 500, color: "#EDE8DE", lineHeight: 1.05 }}>
             {sell1g !== null ? fmt(sell1g) : "—"}
           </span>
           {sell1gDiff && (
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginTop: 18, gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginTop: 16, gap: 12 }}>
               <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
                 {sell1gDiff.up !== null && <Arrow up={sell1gDiff.up} />}
                 <span style={{ fontSize: 22, color: sell1gDiff.color, fontWeight: 400 }}>{sell1gDiff.text}</span>
@@ -180,7 +194,7 @@ export async function GET(req: NextRequest): Promise<Response> {
             </div>
           )}
           {!sell1gDiff && sell1g !== null && (
-            <span style={{ fontSize: 15, color: "#4A3E2E", marginTop: 18 }}>Tidak ada data pembanding</span>
+            <span style={{ fontSize: 14, color: "#4A3E2E", marginTop: 16 }}>Tidak ada data pembanding</span>
           )}
         </div>
 
@@ -188,14 +202,14 @@ export async function GET(req: NextRequest): Promise<Response> {
         <div style={{
           display: "flex", flexDirection: "column", flex: 1,
           background: "rgba(201,168,76,0.04)", border: "1px solid rgba(201,168,76,0.18)",
-          borderRadius: 14, padding: "28px 32px",
+          borderRadius: 14, padding: "24px 32px",
         }}>
-          <span style={{ fontSize: 15, letterSpacing: 3, color: "#8A7E6E", fontWeight: 500, marginBottom: 14 }}>HARGA BUYBACK</span>
+          <span style={{ fontSize: 14, letterSpacing: 3, color: "#8A7E6E", fontWeight: 500, marginBottom: 12 }}>HARGA BUYBACK</span>
           <span style={{ fontSize: 50, fontWeight: 500, color: "#C9A84C", lineHeight: 1.05 }}>
             {bb1g !== null ? fmt(bb1g) : "—"}
           </span>
           {bb1gDiff && (
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginTop: 18, gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", marginTop: 16, gap: 12 }}>
               <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
                 {bb1gDiff.up !== null && <Arrow up={bb1gDiff.up} />}
                 <span style={{ fontSize: 22, color: bb1gDiff.color, fontWeight: 400 }}>{bb1gDiff.text}</span>
@@ -212,18 +226,22 @@ export async function GET(req: NextRequest): Promise<Response> {
             </div>
           )}
           {!bb1gDiff && bb1g !== null && (
-            <span style={{ fontSize: 15, color: "#4A3E2E", marginTop: 18 }}>Tidak ada data pembanding</span>
+            <span style={{ fontSize: 14, color: "#4A3E2E", marginTop: 16 }}>Tidak ada data pembanding</span>
           )}
         </div>
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: "rgba(201,168,76,0.18)", display: "flex", marginTop: 28, marginBottom: 20 }} />
+      <div style={{ height: 1, background: "rgba(201,168,76,0.18)", display: "flex", marginTop: 24, marginBottom: 18 }} />
 
       {/* Footer */}
       <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 16, color: "#5A5045", letterSpacing: 0.5 }}>Data: Antam · clemira.id</span>
-        <span style={{ fontSize: 16, color: "#5A5045", letterSpacing: 0.5 }}>Jual Beli Emas Antam Terpercaya</span>
+        <span style={{ fontSize: 15, color: "#5A5045", letterSpacing: 0.5 }}>source: www.logammulia.com</span>
+        {/* QR code sized to match text below */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <img src={qrSrc} width={112} height={112} style={{ borderRadius: 4 }} />
+          <span style={{ fontSize: 13, color: "#7A6E5F", letterSpacing: 1.5 }}>Scan. Explore. Invest</span>
+        </div>
       </div>
     </div>
   );
@@ -232,8 +250,9 @@ export async function GET(req: NextRequest): Promise<Response> {
     width: W,
     height: H,
     fonts: [
-      { name: "DM Sans", data: fontRegular, weight: 400, style: "normal" },
-      { name: "DM Sans", data: fontMedium,  weight: 500, style: "normal" },
+      { name: "DM Sans",    data: fontRegular,   weight: 400, style: "normal" },
+      { name: "DM Sans",    data: fontMedium,    weight: 500, style: "normal" },
+      { name: "Cormorant",  data: fontCormorant, weight: 600, style: "normal" },
     ],
     headers: {
       "Cache-Control": "no-store",

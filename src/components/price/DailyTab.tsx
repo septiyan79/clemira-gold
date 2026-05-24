@@ -49,11 +49,14 @@ export default function DailyTab() {
 
   return (
     <>
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 24, flexWrap: "wrap" }}>
+      <div className="dtr">
         <div>
           <label style={{ fontSize: 11, color: "#5A5045", display: "block", marginBottom: 6, letterSpacing: 1 }}>PILIH TANGGAL</label>
           <input type="date" className="ci" value={date} onChange={e => setDate(e.target.value)} style={{ width: 200 }} />
         </div>
+        {data?.date && (sell1g !== null || bb1g !== null) && (
+          <SharePriceButton date={data.date} sell1g={sell1g} bb1g={bb1g} diff1g={diff1g} />
+        )}
       </div>
 
       {data?.date && (
@@ -107,14 +110,6 @@ export default function DailyTab() {
         )}
       </div>
 
-      {data?.date && (sell1g !== null || bb1g !== null) && (
-        <SharePriceButton
-          date={data.date}
-          sell1g={sell1g}
-          bb1g={bb1g}
-        />
-      )}
-
       {loading ? <Spinner /> : entries.length === 0 ? (
         <EmptyState msg="Tidak ada data untuk tanggal ini." />
       ) : (
@@ -142,7 +137,14 @@ export default function DailyTab() {
         </TableWrap>
       )}
 
-      <style>{`.ci{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;color:#EDE8DE;font-size:14px;outline:none}.ci:focus{border-color:rgba(201,168,76,.5)}.ci option{background:#1E1A14;color:#EDE8DE}tbody tr:hover{background:rgba(201,168,76,.03)}`}</style>
+      <style>{`
+        .ci{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;color:#EDE8DE;font-size:14px;outline:none}
+        .ci:focus{border-color:rgba(201,168,76,.5)}
+        .ci option{background:#1E1A14;color:#EDE8DE}
+        tbody tr:hover{background:rgba(201,168,76,.03)}
+        .dtr{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+        @media(max-width:600px){.dtr{flex-direction:column;align-items:stretch}.dtr .spb{align-items:stretch}.dtr .spb button{width:100%;justify-content:center}}
+      `}</style>
     </>
   );
 }
