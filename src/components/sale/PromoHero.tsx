@@ -19,7 +19,7 @@ export default function PromoHero() {
           Promo <em style={{ color: "var(--gold)" }}>Emas Hari Ini</em>
         </h1>
         <p className="fu d3" style={{ fontSize: 15, color: "#7A6E5F", maxWidth: 520, margin: "0 auto 32px", lineHeight: 1.75 }}>
-          Daftar produk emas Antam bersertifikat yang tersedia dengan harga spesial.
+          Daftar produk emas Antam Certicard yang tersedia dengan harga spesial.
           Stok terbatas — hubungi kami segera sebelum kehabisan.
         </p>
         <div className="fu d3" style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>

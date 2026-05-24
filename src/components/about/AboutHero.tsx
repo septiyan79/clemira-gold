@@ -46,8 +46,9 @@ export default function AboutHero() {
         <div className="fu d4" style={{ display: "flex", gap: 32, justifyContent: "center", flexWrap: "wrap" }}>
           {[
             { num: "2024", label: "Tahun Berdiri" },
-            { num: "100%", label: "Bersertifikat Antam" },
-            { num: "Jujur", label: "& Transparan" },
+            { num: "Buyback", label: "Tinggi Tanpa Potongan" },
+            { num: "100%", label: "Produk Asli" },
+            { num: "Realtime", label: "Analisa & History" },
           ].map(s => (
             <div key={s.label} style={{ textAlign: "center" }}>
               <div className="fd" style={{ fontSize: "2.2rem", fontWeight: 600, color: "var(--gold)", lineHeight: 1 }}>{s.num}</div>

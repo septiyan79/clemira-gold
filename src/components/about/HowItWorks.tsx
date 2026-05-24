@@ -43,12 +43,14 @@ export default function HowItWorks() {
           gap: 20,
           position: "relative",
         }} className="steps-grid">
-          {/* Connector line */}
+          {/* Connector line: top = padding-top(32) + half circle(26) = 58px
+               left  = padding-left(26) + half circle(26) = 52px (center of circle 1)
+               right = col-width - 52px = (100% - 2*gap(40px)) / 3 - 52px (center of circle 3) */}
           <div style={{
             position: "absolute",
-            top: 36,
-            left: "calc(16.66% + 10px)",
-            right: "calc(16.66% + 10px)",
+            top: 58,
+            left: 52,
+            right: "calc((100% - 40px) / 3 - 52px)",
             height: 1,
             background: "linear-gradient(90deg,rgba(201,168,76,.4),rgba(201,168,76,.15),rgba(201,168,76,.4))",
             zIndex: 0,

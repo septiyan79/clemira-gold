@@ -30,7 +30,8 @@ export default function OurStory() {
               <p style={{ fontSize: 15, color: "#7A6E5F", lineHeight: 1.8 }}>
                 Clemira Gold lahir dari keinginan untuk menyederhanakan proses tersebut —
                 menyediakan informasi harga yang akurat, kalkulator buyback yang transparan,
-                dan akses langsung ke produk emas Antam bersertifikat.
+                histori kepamilikan Logam Mulia Antam
+                dan akses langsung ke produk emas Antam Certicard.
               </p>
               <p style={{ fontSize: 15, color: "#7A6E5F", lineHeight: 1.8 }}>
                 Kami percaya bahwa setiap orang berhak mendapatkan akses yang mudah
@@ -62,7 +63,17 @@ export default function OurStory() {
                 fontStyle: "italic",
                 marginBottom: 24,
               }}>
-                Emasmu, Kendalimu. Kami hanya memastikan Anda selalu tahu nilainya.
+                Investasi terbaik adalah yang dimulai hari ini. Jangan berhenti di sini, mari terus tingkatkan koleksi kamu!
+              </p>
+              <p className="fd" style={{
+                fontSize: "1rem",
+                fontWeight: 300,
+                color: "#EDE8DE",
+                lineHeight: 1.5,
+                fontStyle: "italic",
+                marginBottom: 24,
+              }}>
+                Logam Mulia, Berat di tangan, ringan di fikiran!
               </p>
               <div style={{
                 paddingTop: 20,

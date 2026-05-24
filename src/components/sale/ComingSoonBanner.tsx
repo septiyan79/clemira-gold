@@ -8,7 +8,7 @@ export default function ComingSoonBanner() {
       textAlign: "center",
     }}>
       <p style={{ fontSize: 13, color: "var(--gold)", letterSpacing: 1 }}>
-        ✦ Fitur notifikasi promo otomatis & filter real-time{" "}
+        ✦ Halaman ini akan menampilkan informasi Sale dan Promo{" "}
         <span style={{
           display: "inline-block",
           background: "rgba(201,168,76,.2)",

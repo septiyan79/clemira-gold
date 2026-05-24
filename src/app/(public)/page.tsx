@@ -6,7 +6,6 @@ import Ticker from "@/components/landing/Ticker";
 import PriceChart from "@/components/landing/PriceChart";
 import Calculator from "@/components/landing/Calculator";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 
 const Logo = ({ size = 24 }: { size?: number }) =>
   <Image src="/Logo CG.png" alt="Clemira Gold" width={size} height={size} style={{ objectFit: "contain" }} />;
@@ -53,8 +52,7 @@ async function getLatestHarga() {
 }
 
 export default async function HomePage() {
-  const [hargaData, session] = await Promise.all([getLatestHarga(), auth()]);
-  const role = (session?.user as { role?: string })?.role;
+  const hargaData = await getLatestHarga();
 
   const TARGET_GRAM = [0.5, 1, 2, 5, 10];
 
@@ -126,7 +124,7 @@ export default async function HomePage() {
                 <em style={{ color: "var(--gold)", fontStyle: "italic" }}>Kendalimu</em>
               </h1>
               <p className="fu d3" style={{ fontSize: 16, color: "#9A8E7E", lineHeight: 1.75, maxWidth: 400, marginBottom: 32 }}>
-                Pantau harga emas Antam harian, hitung buyback secara instan, dan kelola investasi emas Anda dengan mudah dan transparan. Mulai dari 0.5 gram.
+                Pantau harga emas Antam harian, hitung buyback secara instan, dan kelola investasi emas Anda dengan mudah dan transparan.
               </p>
               <div className="fu d3" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <Link href="/price" className="btn-gold">Pantau Harga Emas!</Link>
@@ -135,7 +133,7 @@ export default async function HomePage() {
               <div className="fu d4" style={{ display: "flex", gap: 36, marginTop: 48, paddingTop: 32, borderTop: "1px solid rgba(255,255,255,.07)" }}>
                 {[
                   { num: "Harian", label: "Update Harga" },
-                  { num: "100%", label: "Bersertifikat" },
+                  { num: "100%", label: "Produk Resmi" },
                   { num: "Jujur", label: "& Transparan" },
                 ].map(s => (
                   <div key={s.label}>
@@ -311,59 +309,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <div className="shimmer-line" />
-
-      {/* ══ FOOTER ══ */}
-      <footer style={{ padding: "44px 20px 28px", borderTop: "1px solid rgba(201,168,76,.15)", background: "rgba(0,0,0,.3)" }}>
-        <div className="wrap">
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 40, marginBottom: 36 }} className="foot-grid">
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                <Logo />
-                <span className="fd" style={{ fontSize: 16, color: "#EDE8DE" }}>Clemira Gold</span>
-              </div>
-              <p style={{ fontSize: 13, color: "#5A5045", lineHeight: 1.7, maxWidth: 220 }}>
-                Platform pantau harga emas Antam bersertifikat. Jujur, transparan, dan mudah diakses.
-              </p>
-              <p style={{ fontSize: 12, color: "#3A342A", marginTop: 12 }}>📍 Indonesia</p>
-            </div>
-            <div>
-              <p style={{ fontSize: 11, letterSpacing: 2, color: "#5A5045", textTransform: "uppercase", marginBottom: 14 }}>Platform</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {[["Harga Emas", "/price"], ["Sale Hari Ini", "/sale"], ["Tentang Kami", "/about"]].map(([label, href]) => (
-                  <Link key={href} href={href} style={{ fontSize: 14, color: "#6A5E4F", textDecoration: "none" }}>{label}</Link>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p style={{ fontSize: 11, letterSpacing: 2, color: "#5A5045", textTransform: "uppercase", marginBottom: 14 }}>Fitur</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {[["Kalkulator", "#kalkulator"], ["Grafik Harga", "#harga"], ["Admin Panel", "/admin"]].map(([label, href]) => (
-                  <Link key={href} href={href} style={{ fontSize: 14, color: "#6A5E4F", textDecoration: "none" }}>{label}</Link>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p style={{ fontSize: 11, letterSpacing: 2, color: "#5A5045", textTransform: "uppercase", marginBottom: 14 }}>Kontak</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <a href="https://wa.me/6285975459997" target="_blank" rel="noreferrer" style={{ fontSize: 14, color: "var(--gold)", textDecoration: "none" }}>WhatsApp</a>
-                {!session ? (
-                  <Link href="/login" style={{ fontSize: 14, color: "#6A5E4F", textDecoration: "none" }}>Masuk</Link>
-                ) : role === "admin" ? (
-                  <Link href="/admin" style={{ fontSize: 14, color: "var(--gold)", textDecoration: "none" }}>Admin Panel</Link>
-                ) : (
-                  <Link href="/profile" style={{ fontSize: 14, color: "#6A5E4F", textDecoration: "none" }}>Profil</Link>
-                )}
-              </div>
-            </div>
-          </div>
-          <div style={{ borderTop: "1px solid rgba(255,255,255,.05)", paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-            <p style={{ fontSize: 12, color: "#3A342A" }}>© 2026 Clemira Gold. Hak Cipta Dilindungi.</p>
-            <p style={{ fontSize: 12, color: "#3A342A", fontStyle: "italic" }}>Emasmu, Kendalimu.</p>
-          </div>
-        </div>
-      </footer>
-
       <style>{`
         .feat-card {
           background: rgba(255,255,255,.03);
@@ -382,12 +327,10 @@ export default async function HomePage() {
           .hero-badge{display:none !important}
           .feat-grid{grid-template-columns:repeat(2,1fr) !important}
           .sale-grid{grid-template-columns:1fr 1fr !important}
-          .foot-grid{grid-template-columns:1fr 1fr !important;gap:28px !important}
         }
         @media(max-width:600px){
           .feat-grid{grid-template-columns:1fr !important}
           .sale-grid{grid-template-columns:1fr !important}
-          .foot-grid{grid-template-columns:1fr 1fr !important}
         }
       `}</style>
     </>
