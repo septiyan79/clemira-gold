@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import WhatsAppPopover from "@/components/shared/WhatsAppPopover";
 
 export type PriceEntry = {
   gram: number;
@@ -336,11 +337,12 @@ function BuybackTab({ entries }: { entries: PriceEntry[] }) {
             <span className="fd" style={{ fontSize: 15, color: "#4CAF50", fontWeight: 600 }}>+{fmt(result.selisih)}</span>
           </div>
 
-          <a href="https://wa.me/6285975459997?text=Halo,%20Mau%20info%20Buyback%20Antam%20nya%20min!"
-            target="_blank" rel="noreferrer" className="btn-gold"
-            style={{ display: "block", textAlign: "center" }}>
-            ☏ Hubungi Kami →
-          </a>
+          <WhatsAppPopover
+            message={`Halo, saya ingin info buyback emas Antam ${result.gram} gram. Estimasi saya ${fmt(result.clemira)} via Clemira Gold.`}
+            label="☏ Hubungi Kami →"
+            style={{ display: "block", width: "100%", textAlign: "center" }}
+            align="center"
+          />
         </div>
       )}
 

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Ticker from "@/components/landing/Ticker";
 import PriceChart from "@/components/landing/PriceChart";
 import Calculator from "@/components/landing/Calculator";
+import WhatsAppPopover from "@/components/shared/WhatsAppPopover";
 import { prisma } from "@/lib/prisma";
 
 const Logo = ({ size = 24 }: { size?: number }) =>
@@ -301,9 +302,12 @@ export default async function HomePage() {
           </p>
           <div style={{ display: "flex", gap: 12, maxWidth: 440, margin: "0 auto 24px", justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/price" className="btn-gold">Pantau Harga Sekarang</Link>
-            <a href="https://wa.me/6285975459997?text=Halo,%20Mau%20info%20Sale%20Antam%20nya%20min!" target="_blank" rel="noreferrer" className="btn-outline">
-              ☏ Hubungi Kami
-            </a>
+            <WhatsAppPopover
+              message="Halo, saya ingin tahu lebih tentang Clemira Gold!"
+              label="☏ Hubungi Kami"
+              className="btn-outline"
+              align="center"
+            />
           </div>
           <p style={{ fontSize: 12, color: "#5A5045" }}>Data harga update harian · Tidak ada biaya tersembunyi</p>
         </div>

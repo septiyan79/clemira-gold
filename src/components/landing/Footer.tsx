@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/lib/auth";
+import WhatsAppPopover from "@/components/shared/WhatsAppPopover";
 
 export default async function Footer() {
   const session = await auth();
@@ -48,8 +49,12 @@ export default async function Footer() {
             <div>
               <p style={{ fontSize: 11, letterSpacing: 2, color: "#5A5045", textTransform: "uppercase", marginBottom: 14 }}>Kontak</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <a href="https://wa.me/6285975459997" target="_blank" rel="noreferrer"
-                  style={{ fontSize: 14, color: "var(--gold)", textDecoration: "none" }}>WhatsApp</a>
+                <WhatsAppPopover
+                  label="WhatsApp"
+                  message="Halo, saya ingin bertanya tentang Clemira Gold!"
+                  className=""
+                  style={{ fontSize: 14, color: "var(--gold)", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-dm-sans), sans-serif", textAlign: "left" }}
+                />
                 {!session ? (
                   <Link href="/login" style={{ fontSize: 14, color: "#6A5E4F", textDecoration: "none" }}>Masuk</Link>
                 ) : role === "admin" ? (

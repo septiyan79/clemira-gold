@@ -1,5 +1,6 @@
 import Link from "next/link";
 import LogoSmall from "./LogoSmall";
+import WhatsAppPopover from "@/components/shared/WhatsAppPopover";
 
 export default function PromoCTA() {
   return (
@@ -33,14 +34,11 @@ export default function PromoCTA() {
             dan menjawab pertanyaan seputar harga serta proses transaksi.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <a
-              href="https://wa.me/6285975459997?text=Halo,%20saya%20mau%20tanya%20info%20promo%20emas%20hari%20ini!"
-              target="_blank"
-              rel="noreferrer"
-              className="btn-gold"
-            >
-              ☏ Chat WhatsApp
-            </a>
+            <WhatsAppPopover
+              message="Halo, saya mau tanya info promo emas hari ini!"
+              label="☏ Chat WhatsApp"
+              align="center"
+            />
             <Link href="/price" className="btn-outline">Lihat Harga Emas</Link>
           </div>
         </div>

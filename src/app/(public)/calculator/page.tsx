@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import CalculatorPage from "./CalculatorPage";
+import WhatsAppPopover from "@/components/shared/WhatsAppPopover";
 
 export const dynamic = "force-dynamic";
 
@@ -59,10 +60,20 @@ export default async function CalculatorRoute() {
         <div className="wrap">
           <CalculatorPage entries={entries} date={date} />
 
-          <div style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
+          <div style={{ marginTop: 32, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
             <Link href="/" style={{ fontSize: 13, color: "#5A5045", textDecoration: "none" }}>
               ← Kembali ke Beranda
             </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <p style={{ fontSize: 13, color: "#5A5045" }}>Ada pertanyaan tentang harga?</p>
+              <WhatsAppPopover
+                message="Halo, saya ingin bertanya tentang harga dan buyback emas Antam!"
+                label="☏ Hubungi Kami"
+                className="btn-outline"
+                style={{ fontSize: 13, padding: "8px 16px" }}
+                align="center"
+              />
+            </div>
           </div>
         </div>
       </section>

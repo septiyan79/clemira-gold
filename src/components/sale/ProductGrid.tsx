@@ -1,5 +1,6 @@
 import ProductCard from "./ProductCard";
 import { PRODUCTS } from "./promo-data";
+import WhatsAppPopover from "@/components/shared/WhatsAppPopover";
 
 export default function ProductGrid() {
   return (
@@ -12,15 +13,12 @@ export default function ProductGrid() {
               Stok <em style={{ color: "var(--gold)" }}>Tersedia Hari Ini</em>
             </h2>
           </div>
-          <a
-            href="https://wa.me/6285975459997?text=Halo,%20saya%20mau%20tanya%20info%20promo%20emas%20hari%20ini!"
-            target="_blank"
-            rel="noreferrer"
+          <WhatsAppPopover
+            message="Halo, saya mau tanya info stok emas terbaru!"
+            label="☏ Tanya Stok Terbaru"
             className="btn-outline"
             style={{ fontSize: 14, padding: "10px 20px" }}
-          >
-            ☏ Tanya Stok Terbaru
-          </a>
+          />
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="promo-grid">

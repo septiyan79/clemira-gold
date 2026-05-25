@@ -1,4 +1,5 @@
 import Link from "next/link";
+import WhatsAppPopover from "@/components/shared/WhatsAppPopover";
 
 export default function AboutCTA() {
   return (
@@ -32,14 +33,12 @@ export default function AboutCTA() {
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 24 }}>
           <Link href="/price" className="btn-gold">Pantau Harga Sekarang</Link>
-          <a
-            href="https://wa.me/6285975459997?text=Halo,%20saya%20ingin%20tahu%20lebih%20tentang%20Clemira%20Gold!"
-            target="_blank"
-            rel="noreferrer"
+          <WhatsAppPopover
+            message="Halo, saya ingin tahu lebih tentang Clemira Gold!"
+            label="☏ Hubungi Kami"
             className="btn-outline"
-          >
-            ☏ Hubungi Kami
-          </a>
+            align="center"
+          />
         </div>
         <p style={{ fontSize: 12, color: "#4A4035" }}>
           Update harga harian · Kalkulator buyback gratis · Produk bersertifikat

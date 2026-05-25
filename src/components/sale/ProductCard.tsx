@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import GoldBarIcon from "./GoldBarIcon";
 import { type PromoProduct, type BadgeType, formatRupiah } from "./promo-data";
+import WhatsAppPopover from "@/components/shared/WhatsAppPopover";
 
 const BADGE_STYLES: Record<BadgeType, CSSProperties> = {
   flash: {
@@ -30,7 +31,7 @@ const BADGE_STYLES: Record<BadgeType, CSSProperties> = {
 
 export default function ProductCard({ p }: { p: PromoProduct }) {
   const stokColor = p.stok <= 2 ? "#EF5350" : p.stok <= 5 ? "#FF9800" : "#4CAF50";
-  const waText = `Halo,%20saya%20tertarik%20dengan%20${encodeURIComponent(p.name)}%20seharga%20${encodeURIComponent(formatRupiah(p.hargaJual))}%20min!`;
+  const waMessage = `Halo, saya tertarik dengan ${p.name} seharga ${formatRupiah(p.hargaJual)} min!`;
 
   return (
     <div style={{
@@ -135,15 +136,11 @@ export default function ProductCard({ p }: { p: PromoProduct }) {
           </div>
         </div>
 
-        <a
-          href={`https://wa.me/6285975459997?text=${waText}`}
-          target="_blank"
-          rel="noreferrer"
-          className="btn-gold"
+        <WhatsAppPopover
+          message={waMessage}
+          label="Pesan via WhatsApp →"
           style={{ width: "100%", fontSize: 14, padding: "12px 16px" }}
-        >
-          Pesan via WhatsApp →
-        </a>
+        />
       </div>
     </div>
   );
