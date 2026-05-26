@@ -31,19 +31,6 @@ model HargaAntam {
   @@unique([tanggal, gramasi])
 }
 
-model Produk {
-  id        String   @id @default(cuid())
-  name      String
-  brand     String
-  type      String
-  weight    Float
-  unit      String   @default("gram")
-  slug      String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 // NextAuth tables
 model Account {
   id                String  @id @default(cuid())
