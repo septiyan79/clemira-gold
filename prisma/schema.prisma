@@ -67,3 +67,172 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+// =============================================================================
+// GOLD RESELLER SCHEMA
+// =============================================================================
+
+model Owner {
+  id        String   @id @default(cuid())
+  name      String   @db.VarChar(100)
+  type      String   @db.VarChar(20) // 'entity' | 'personal'
+  notes     String?
+  createdAt DateTime @default(now())
+
+  stockUnits             StockUnit[]
+  ownershipTransfersFrom OwnershipTransfer[] @relation("FromOwner")
+  ownershipTransfersTo   OwnershipTransfer[] @relation("ToOwner")
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  sku        String   @unique @db.VarChar(50)
+  name       String   @db.VarChar(100)
+  weightGram Decimal  @db.Decimal(8, 3)
+  purity     String   @default("999.9") @db.VarChar(10)
+  brand      String?  @db.VarChar(50) // 'antam' | 'ubs' | 'galeri24' | etc
+  series     String?  @db.VarChar(50) // 'regular' | 'gift' | 'batik' | etc
+  createdAt  DateTime @default(now())
+
+  stockUnits StockUnit[]
+}
+
+model Counterparty {
+  id        String   @id @default(cuid())
+  name      String   @db.VarChar(100)
+  type      String[] // e.g. ['buyer'], ['supplier'], ['buyer','supplier']
+  phone     String?  @db.VarChar(20)
+  notes     String?
+  createdAt DateTime @default(now())
+
+  stockUnitsSourced StockUnit[]
+  purchaseOrders    PurchaseOrder[]
+  transactions      Transaction[]
+  consignmentLines  ConsignmentLine[]
+  swapEvents        SwapEvent[]
+}
+
+model StockUnit {
+  id               String   @id @default(cuid())
+  productId        String
+  ownerId          String
+  purchaseSourceId String?
+  serialNumber     String?  @db.VarChar(100)
+  certCode         String?  @db.VarChar(100)
+  mintYear         Int?     @db.SmallInt
+  condition           String   @default("new") @db.VarChar(20) // 'new' | 'used'
+  status              String   @default("available") @db.VarChar(20) // 'available' | 'reserved' | 'sold' | 'swapped_out'
+  actualPurchasePrice Decimal? @db.Decimal(14, 2) // real price paid for this specific unit
+  referencePrice      Decimal? @db.Decimal(14, 2) // valuation anchor, inherited through swap chains
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  product               Product             @relation(fields: [productId], references: [id])
+  owner                 Owner               @relation(fields: [ownerId], references: [id])
+  purchaseSource        Counterparty?       @relation(fields: [purchaseSourceId], references: [id])
+  purchaseOrderLine     PurchaseOrderLine?
+  transactionLines      TransactionLine[]
+  swapEventsOriginal    SwapEvent[]         @relation("OriginalUnit")
+  swapEventsReplacement SwapEvent[]         @relation("ReplacementUnit")
+  ownershipTransfers    OwnershipTransfer[]
+}
+
+model PurchaseOrder {
+  id            String   @id @default(cuid())
+  supplierId    String
+  goldSpotPrice Decimal? @db.Decimal(12, 2)
+  totalAmount   Decimal  @db.Decimal(16, 2)
+  purchasedAt   DateTime @default(now())
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  supplier Counterparty        @relation(fields: [supplierId], references: [id])
+  lines    PurchaseOrderLine[]
+}
+
+model PurchaseOrderLine {
+  id              String   @id @default(cuid())
+  purchaseOrderId String
+  stockUnitId     String   @unique // one unit can only be in one purchase order line
+  unitPrice       Decimal  @db.Decimal(14, 2)
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  stockUnit     StockUnit     @relation(fields: [stockUnitId], references: [id])
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  buyerId       String?
+  goldSpotPrice Decimal? @db.Decimal(12, 2)
+  transactedAt  DateTime @default(now())
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  buyer Counterparty?     @relation(fields: [buyerId], references: [id])
+  lines TransactionLine[]
+}
+
+model TransactionLine {
+  id              String   @id @default(cuid())
+  transactionId   String
+  stockUnitId     String?
+  fulfillmentMode String   @db.VarChar(20) // 'own_stock' | 'consignment' | 'swap'
+  sellPrice       Decimal  @db.Decimal(14, 2)
+  cogs            Decimal  @db.Decimal(14, 2)
+  margin          Decimal  @db.Decimal(14, 2) // stored explicitly: sellPrice - cogs
+  createdAt       DateTime @default(now())
+
+  transaction     Transaction      @relation(fields: [transactionId], references: [id])
+  stockUnit       StockUnit?       @relation(fields: [stockUnitId], references: [id])
+  consignmentLine ConsignmentLine?
+  swapEvent       SwapEvent?
+}
+
+model ConsignmentLine {
+  id                    String   @id @default(cuid())
+  transactionLineId     String   @unique
+  supplierId            String
+  serialNumber          String?  @db.VarChar(100)
+  certCode              String?  @db.VarChar(100)
+  mintYear              Int?     @db.SmallInt
+  supplierPurchasePrice Decimal  @db.Decimal(14, 2)
+  status                String   @default("pending") @db.VarChar(20) // 'pending' | 'settled'
+  notes                 String?
+  createdAt             DateTime @default(now())
+
+  transactionLine TransactionLine @relation(fields: [transactionLineId], references: [id])
+  supplier        Counterparty    @relation(fields: [supplierId], references: [id])
+}
+
+model SwapEvent {
+  id                String    @id @default(cuid())
+  transactionLineId String    @unique
+  originalUnitId    String
+  replacementUnitId String?
+  supplierId        String?
+  replacementCost   Decimal?  @db.Decimal(14, 2)
+  swappedAt         DateTime?
+  notes             String?
+  createdAt         DateTime  @default(now())
+
+  transactionLine TransactionLine @relation(fields: [transactionLineId], references: [id])
+  originalUnit    StockUnit       @relation("OriginalUnit", fields: [originalUnitId], references: [id])
+  replacementUnit StockUnit?      @relation("ReplacementUnit", fields: [replacementUnitId], references: [id])
+  supplier        Counterparty?   @relation(fields: [supplierId], references: [id])
+}
+
+model OwnershipTransfer {
+  id            String   @id @default(cuid())
+  stockUnitId   String
+  fromOwnerId   String
+  toOwnerId     String
+  transferredAt DateTime @default(now())
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  stockUnit StockUnit @relation(fields: [stockUnitId], references: [id])
+  fromOwner Owner     @relation("FromOwner", fields: [fromOwnerId], references: [id])
+  toOwner   Owner     @relation("ToOwner", fields: [toOwnerId], references: [id])
+}

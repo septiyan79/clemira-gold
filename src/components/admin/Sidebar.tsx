@@ -39,6 +39,13 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
+    label: "Stok",
+    items: [
+      { href: "/admin/stock",       icon: "▣", label: "Dashboard Stok" },
+      { href: "/admin/stock/units", icon: "·", label: "Daftar Unit"    },
+    ],
+  },
+  {
     label: "User",
     items: [
       { href: "/admin/users", icon: "◉", label: "User Management" },
