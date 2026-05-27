@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 
 type MenuItem = { href: string; icon: string; label: string };
@@ -46,6 +46,21 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
+    label: "Transaksi",
+    items: [
+      {
+        icon: "✦",
+        label: "Catat Transaksi",
+        submenu: [
+          { href: "/admin/transactions/new?tab=beli",                icon: "·", label: "Beli Stok"        },
+          { href: "/admin/transactions/new?tab=konsinyasi",          icon: "·", label: "Konsinyasi"       },
+          { href: "/admin/transactions/new?tab=swap",                icon: "·", label: "Swap"             },
+          { href: "/admin/transactions/outstanding-swaps",           icon: "·", label: "Outstanding Swaps"},
+        ],
+      },
+    ],
+  },
+  {
     label: "User",
     items: [
       { href: "/admin/users", icon: "◉", label: "User Management" },
@@ -54,9 +69,16 @@ const menuGroups: MenuGroup[] = [
 ];
 
 export default function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const pathname = usePathname();
-  const isPricePath = pathname.startsWith("/admin/price");
-  const [priceOpen, setPriceOpen] = useState(isPricePath);
+  const pathname      = usePathname();
+  const searchParams  = useSearchParams();
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    Harga:             pathname.startsWith("/admin/price"),
+    "Catat Transaksi": pathname.startsWith("/admin/transactions"),
+  });
+
+  function toggleMenu(label: string) {
+    setOpenMenus(m => ({ ...m, [label]: !m[label] }));
+  }
 
   const mounted = useRef(false);
   useEffect(() => {
@@ -102,12 +124,13 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
 
             {group.items.map((item) => {
               if ("submenu" in item) {
-                const isAnyActive = item.submenu.some(s => pathname === s.href);
+                const isOpen      = openMenus[item.label] ?? false;
+                const isAnyActive = item.submenu.some(s => pathname.startsWith(s.href.split("?")[0]));
                 return (
                   <div key={item.label}>
                     {/* Parent toggle */}
                     <button
-                      onClick={() => setPriceOpen(o => !o)}
+                      onClick={() => toggleMenu(item.label)}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -115,7 +138,7 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
                         width: "100%",
                         padding: "10px 20px",
                         fontSize: "14px",
-                        color: isAnyActive || priceOpen ? "var(--gold)" : "#7A6E5F",
+                        color: isAnyActive || isOpen ? "var(--gold)" : "#7A6E5F",
                         background: isAnyActive ? "rgba(201,168,76,0.08)" : "transparent",
                         borderLeft: isAnyActive ? "2px solid var(--gold)" : "2px solid transparent",
                         border: "none",
@@ -132,15 +155,19 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
                       <span style={{
                         fontSize: "10px",
                         transition: "transform .2s",
-                        transform: priceOpen ? "rotate(180deg)" : "none",
+                        transform: isOpen ? "rotate(180deg)" : "none",
                       }}>▼</span>
                     </button>
 
                     {/* Submenu */}
-                    {priceOpen && (
+                    {isOpen && (
                       <div style={{ borderLeft: "1px solid rgba(201,168,76,0.12)", marginLeft: "30px" }}>
                         {item.submenu.map(sub => {
-                          const isActive = pathname === sub.href;
+                          const [subPath, subQuery] = sub.href.split("?");
+                          const isActive = subQuery
+                            ? pathname === subPath &&
+                              new URLSearchParams(subQuery).get("tab") === searchParams.get("tab")
+                            : pathname === subPath;
                           return (
                             <Link key={sub.href} href={sub.href} style={{
                               display: "flex",
