@@ -108,11 +108,7 @@ export default async function OutstandingSwapsPage() {
                       : null;
 
                     return (
-                      <tr key={ev.id}
-                        onMouseOver={e  => (e.currentTarget.style.background = "rgba(201,168,76,.03)")}
-                        onMouseOut={e   => (e.currentTarget.style.background = "")}
-                        style={{ transition: "background .15s" }}
-                      >
+                      <tr key={ev.id} className="adm-tr-hover">
                         <td style={tdStyle}>
                           <div>{tx ? fmtDate(tx.transactedAt.toISOString()) : "—"}</div>
                           {age !== null && (

@@ -69,65 +69,283 @@ function F({ label, addon, children }: { label: string; addon?: React.ReactNode;
   );
 }
 
+type CPResult = { id: string; name: string; type: string[] };
+
 function QuickAdd({ type, role, onCreated }: {
   type: "counterparty" | "owner";
   role?: "buyer" | "supplier";
   onCreated: (id: string, name: string) => void;
 }) {
   const [open,      setOpen]      = useState(false);
-  const [name,      setName]      = useState("");
-  const [phone,     setPhone]     = useState("");
-  const [ownerType, setOwnerType] = useState<"entity" | "personal">("personal");
   const [saving,    setSaving]    = useState(false);
   const [err,       setErr]       = useState("");
 
-  function reset() { setOpen(false); setName(""); setPhone(""); setErr(""); }
+  // Owner-mode state
+  const [ownerName, setOwnerName] = useState("");
+  const [ownerType, setOwnerType] = useState<"entity" | "personal">("personal");
 
-  async function save() {
-    if (!name.trim()) { setErr("Nama wajib diisi"); return; }
+  // Counterparty combobox state
+  const [query,     setQuery]     = useState("");
+  const [results,   setResults]   = useState<CPResult[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  function reset() {
+    setOpen(false); setOwnerName(""); setQuery("");
+    setResults([]); setErr(""); setSaving(false);
+  }
+
+  // Debounced search
+  useEffect(() => {
+    if (type !== "counterparty" || !open || !query.trim()) {
+      setResults([]); return;
+    }
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/stock/counterparties?q=${encodeURIComponent(query.trim())}`);
+        setResults(await res.json());
+      } finally { setSearching(false); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query, open, type]);
+
+  async function handleSelectExisting(cp: CPResult) {
+    if (!role || cp.type.includes(role)) {
+      // Already has the role — just pick them
+      onCreated(cp.id, cp.name); reset(); return;
+    }
+    // Need to add role via PATCH
+    setSaving(true);
+    const res = await fetch(`/api/stock/counterparties/${cp.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ addRole: role }),
+    });
+    setSaving(false);
+    if (res.ok) { onCreated(cp.id, cp.name); reset(); }
+    else { const d = await res.json(); setErr(d.error ?? "Gagal menambah role"); }
+  }
+
+  async function handleCreateNew() {
+    const nameVal = type === "counterparty" ? query.trim() : ownerName.trim();
+    if (!nameVal) { setErr("Nama wajib diisi"); return; }
     setSaving(true); setErr("");
     const [url, body] = type === "counterparty"
-      ? ["/api/stock/counterparties", { name: name.trim(), type: [role!], phone: phone || undefined }]
-      : ["/api/stock/owners",         { name: name.trim(), type: ownerType }];
-    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      ? ["/api/stock/counterparties", { name: nameVal, type: [role!] }]
+      : ["/api/stock/owners",         { name: nameVal, type: ownerType }];
+    const res = await fetch(url, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
     setSaving(false);
     if (res.ok) { const d = await res.json(); onCreated(d.id, d.name); reset(); }
     else { const d = await res.json(); setErr(d.error ?? "Gagal menyimpan"); }
   }
 
-  const btnBase: React.CSSProperties = { height: 28, padding: "0 12px", fontSize: 12, borderRadius: 6, cursor: "pointer", fontFamily: "var(--font-dm-sans), sans-serif" };
+  const modalCard: React.CSSProperties = {
+    background: "#1E1A14", border: "1px solid rgba(255,255,255,.1)",
+    borderRadius: 16, padding: 28, width: "100%", maxWidth: 500,
+    maxHeight: "90vh", overflowY: "auto",
+  };
+  const btnBase: React.CSSProperties = {
+    height: 38, padding: "0 20px", fontSize: 14, borderRadius: 8,
+    cursor: "pointer", fontFamily: "var(--font-dm-sans), sans-serif",
+  };
+  const overlay: React.CSSProperties = {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,.65)", zIndex: 1000,
+    display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+  };
+
+  const modalTitle = type === "owner"
+    ? "Tambah Pemilik Baru"
+    : `Tambah ${role === "buyer" ? "Pembeli" : role === "supplier" ? "Supplier" : "Counterparty"}`;
 
   if (!open) return (
     <button type="button" onClick={() => setOpen(true)}
-      style={{ fontSize: 11, color: "var(--gold)", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-dm-sans), sans-serif" }}>
+      style={{ fontSize: 13, color: "var(--gold)", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-dm-sans), sans-serif" }}>
       + Baru
     </button>
   );
 
+  // ── Owner mode modal ──
+  if (type === "owner") return (
+    <div style={overlay} onMouseDown={e => { if (e.target === e.currentTarget) reset(); }}>
+      <div style={modalCard}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <h3 className="fd" style={{ margin: 0, fontSize: "1.15rem", fontWeight: 400, color: "var(--text)" }}>
+            {modalTitle}
+          </h3>
+          <button type="button" onClick={reset}
+            style={{ background: "none", border: "none", color: "#5A5045", fontSize: 24, cursor: "pointer", lineHeight: 1, padding: 0 }}>
+            ×
+          </button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div>
+            <label style={S.lbl}>Nama *</label>
+            <input autoFocus placeholder="Nama pemilik" value={ownerName} onChange={e => setOwnerName(e.target.value)}
+              style={S.inp} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleCreateNew())} />
+          </div>
+          <div>
+            <label style={S.lbl}>Tipe</label>
+            <select value={ownerType} onChange={e => setOwnerType(e.target.value as "entity" | "personal")}
+              style={{ ...S.inp, cursor: "pointer" }}>
+              <option value="personal">Personal</option>
+              <option value="entity">Entitas / Toko</option>
+            </select>
+          </div>
+        </div>
+
+        {err && (
+          <div style={{ marginTop: 16, fontSize: 13, color: "#EF5350", background: "rgba(239,83,80,.08)", border: "1px solid rgba(239,83,80,.2)", borderRadius: 6, padding: "10px 14px" }}>
+            {err}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+          <button type="button" onClick={handleCreateNew} disabled={saving}
+            style={{ ...btnBase, border: "1px solid rgba(201,168,76,.4)", background: "rgba(201,168,76,.12)", color: "var(--gold)", opacity: saving ? 0.6 : 1 }}>
+            {saving ? "Menyimpan…" : "Simpan"}
+          </button>
+          <button type="button" onClick={reset}
+            style={{ ...btnBase, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "#7A6E5F" }}>
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Counterparty combobox modal ──
+  const roleBg  = (r: string) => r === "buyer" ? "rgba(201,168,76,.12)" : "rgba(100,181,246,.12)";
+  const roleClr = (r: string) => r === "buyer" ? "#C9A84C" : "#64B5F6";
+
   return (
-    <div style={{ marginTop: 8, padding: "12px 14px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8 }}>
-      <input autoFocus placeholder="Nama *" value={name} onChange={e => setName(e.target.value)}
-        style={{ ...S.inp, marginBottom: 8 }} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), save())} />
-      {type === "counterparty" && (
-        <input placeholder="No. HP (opsional)" value={phone} onChange={e => setPhone(e.target.value)} style={{ ...S.inp, marginBottom: 8 }} />
-      )}
-      {type === "owner" && (
-        <select value={ownerType} onChange={e => setOwnerType(e.target.value as "entity" | "personal")}
-          style={{ ...S.inp, marginBottom: 8, cursor: "pointer" }}>
-          <option value="personal">Personal</option>
-          <option value="entity">Entitas / Toko</option>
-        </select>
-      )}
-      {err && <p style={{ fontSize: 12, color: "#EF5350", marginBottom: 8 }}>{err}</p>}
-      <div style={{ display: "flex", gap: 8 }}>
-        <button type="button" onClick={save} disabled={saving}
-          style={{ ...btnBase, border: "1px solid rgba(201,168,76,.4)", background: "rgba(201,168,76,.1)", color: "var(--gold)" }}>
-          {saving ? "…" : "Simpan"}
-        </button>
-        <button type="button" onClick={reset}
-          style={{ ...btnBase, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "#7A6E5F" }}>
-          Batal
-        </button>
+    <div style={overlay} onMouseDown={e => { if (e.target === e.currentTarget) reset(); }}>
+      <div style={modalCard}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 className="fd" style={{ margin: 0, fontSize: "1.15rem", fontWeight: 400, color: "var(--text)" }}>
+            {modalTitle}
+          </h3>
+          <button type="button" onClick={reset}
+            style={{ background: "none", border: "none", color: "#5A5045", fontSize: 24, cursor: "pointer", lineHeight: 1, padding: 0 }}>
+            ×
+          </button>
+        </div>
+
+        {/* Search input */}
+        <div>
+          <label style={S.lbl}>Cari atau ketik nama baru</label>
+          <input
+            autoFocus
+            placeholder={`Nama ${role === "buyer" ? "pembeli" : "supplier"}…`}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => e.key === "Escape" && reset()}
+            style={S.inp}
+          />
+        </div>
+
+        {/* Results */}
+        {query.trim() && (
+          <div style={{
+            marginTop: 10,
+            border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, overflow: "hidden",
+          }}>
+            {searching && (
+              <div style={{ padding: "16px", fontSize: 14, color: "#5A5045" }}>Mencari…</div>
+            )}
+
+            {!searching && results.map((cp, i) => {
+              const hasRole = !role || cp.type.includes(role);
+              return (
+                <div key={cp.id}
+                  onMouseDown={e => { e.preventDefault(); if (!saving) handleSelectExisting(cp); }}
+                  style={{
+                    padding: "14px 16px", cursor: saving ? "default" : "pointer",
+                    borderBottom: i < results.length - 1 ? "1px solid rgba(255,255,255,.06)" : undefined,
+                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16,
+                    background: "rgba(255,255,255,.02)",
+                    transition: "background .12s",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,.05)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,.02)")}
+                >
+                  <div>
+                    <div style={{ fontSize: 15, color: "#EDE8DE", marginBottom: 6 }}>{cp.name}</div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {cp.type.map(r => (
+                        <span key={r} style={{
+                          fontSize: 12, padding: "2px 10px", borderRadius: 4,
+                          background: roleBg(r), color: roleClr(r), fontWeight: 500,
+                        }}>
+                          {r === "buyer" ? "Buyer" : "Supplier"}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <span style={{
+                    fontSize: 13, whiteSpace: "nowrap", padding: "6px 14px", borderRadius: 6, fontWeight: 500,
+                    color:      hasRole ? "#4CAF50"            : "var(--gold)",
+                    background: hasRole ? "rgba(76,175,80,.1)" : "rgba(201,168,76,.1)",
+                    border:     `1px solid ${hasRole ? "rgba(76,175,80,.3)" : "rgba(201,168,76,.3)"}`,
+                  }}>
+                    {hasRole ? "Pilih" : `+ tambah role ${role}`}
+                  </span>
+                </div>
+              );
+            })}
+
+            {!searching && results.length === 0 && (
+              <div style={{ padding: "16px", fontSize: 14, color: "#5A5045" }}>
+                Tidak ditemukan di database
+              </div>
+            )}
+
+            {/* Create new row */}
+            <div
+              onMouseDown={e => { e.preventDefault(); if (!saving) handleCreateNew(); }}
+              style={{
+                padding: "14px 16px", cursor: saving ? "default" : "pointer",
+                borderTop: "1px solid rgba(201,168,76,.15)",
+                background: "rgba(201,168,76,.04)",
+                display: "flex", alignItems: "center", gap: 10,
+                opacity: saving ? 0.6 : 1,
+                transition: "background .12s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(201,168,76,.09)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "rgba(201,168,76,.04)")}
+            >
+              <span style={{ color: "var(--gold)", fontSize: 18, lineHeight: 1 }}>+</span>
+              <div>
+                <span style={{ fontSize: 14, color: "#EDE8DE" }}>Buat baru </span>
+                <b style={{ fontSize: 14, color: "var(--gold)" }}>"{query.trim()}"</b>
+                {role && <span style={{ fontSize: 13, color: "#7A6E5F" }}> sebagai {role}</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!query.trim() && (
+          <p style={{ marginTop: 12, fontSize: 13, color: "#3A342A" }}>
+            Ketik nama untuk mencari yang sudah ada atau membuat baru
+          </p>
+        )}
+
+        {err && (
+          <div style={{ marginTop: 14, fontSize: 13, color: "#EF5350", background: "rgba(239,83,80,.08)", border: "1px solid rgba(239,83,80,.2)", borderRadius: 6, padding: "10px 14px" }}>
+            {err}
+          </div>
+        )}
+
+        <div style={{ marginTop: 20 }}>
+          <button type="button" onClick={reset}
+            style={{ ...btnBase, border: "1px solid rgba(255,255,255,.12)", background: "transparent", color: "#7A6E5F" }}>
+            Tutup
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -247,7 +465,7 @@ export default function TransactionForm() {
     setBUnits(u => u.map(x => x._key === key ? { ...x, ...patch } : x));
   }
 
-  async function submitBeli(e: React.FormEvent) {
+  async function submitBeli(e: { preventDefault(): void }) {
     e.preventDefault();
     setBError("");
     if (!bSupplier) { setBError("Supplier wajib dipilih"); return; }
@@ -295,7 +513,7 @@ export default function TransactionForm() {
   const [kLoading, setKLoading] = useState(false);
   const [kError,   setKError]   = useState("");
 
-  async function submitKonsinyasi(e: React.FormEvent) {
+  async function submitKonsinyasi(e: { preventDefault(): void }) {
     e.preventDefault();
     setKError("");
     if (!kSupp)          { setKError("Supplier konsinyasi wajib dipilih"); return; }
@@ -364,7 +582,7 @@ export default function TransactionForm() {
       })
     : avail;
 
-  async function submitSwap(e: React.FormEvent) {
+  async function submitSwap(e: { preventDefault(): void }) {
     e.preventDefault();
     setSwError("");
     if (!swUnitId)         { setSwError("Pilih unit yang di-swap"); return; }
@@ -489,7 +707,7 @@ export default function TransactionForm() {
           <div style={S.card}>
             <p style={{ fontSize: 12, color: "#5A5045", marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Info Pembelian</p>
             <Grid cols={2}>
-              <F label="Supplier *" addon={<QuickAdd type="counterparty" role="supplier" onCreated={(id, name) => { setSuppliers(s => [...s, { id, name }]); setBSupplier(id); }} />}>
+              <F label="Supplier *" addon={<QuickAdd type="counterparty" role="supplier" onCreated={(id, name) => { setSuppliers(s => s.find(x => x.id === id) ? s : [...s, { id, name }]); setBSupplier(id); }} />}>
                 <Sel value={bSupplier} onChange={setBSupplier}>
                   <option value="">— Pilih supplier —</option>
                   {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -546,7 +764,7 @@ export default function TransactionForm() {
                       {products.map(p => <option key={p.id} value={p.id}>{prodLabel(p)}</option>)}
                     </Sel>
                   </F>
-                  <F label="Pemilik *" addon={<QuickAdd type="owner" onCreated={(id, name) => { setOwners(o => [...o, { id, name }]); updateUnit(u._key, { ownerId: id }); }} />}>
+                  <F label="Pemilik *" addon={<QuickAdd type="owner" onCreated={(id, name) => { setOwners(o => o.find(x => x.id === id) ? o : [...o, { id, name }]); updateUnit(u._key, { ownerId: id }); }} />}>
                     <Sel value={u.ownerId} onChange={v => updateUnit(u._key, { ownerId: v })}>
                       <option value="">— Pilih pemilik —</option>
                       {owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
@@ -609,13 +827,13 @@ export default function TransactionForm() {
             <p style={{ fontSize: 12, color: "#5A5045", marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Info Transaksi</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <Grid cols={2}>
-                <F label="Supplier Konsinyasi *" addon={<QuickAdd type="counterparty" role="supplier" onCreated={(id, name) => { setSuppliers(s => [...s, { id, name }]); setKSupp(id); }} />}>
+                <F label="Supplier Konsinyasi *" addon={<QuickAdd type="counterparty" role="supplier" onCreated={(id, name) => { setSuppliers(s => s.find(x => x.id === id) ? s : [...s, { id, name }]); setKSupp(id); }} />}>
                   <Sel value={kSupp} onChange={setKSupp}>
                     <option value="">— Pilih supplier —</option>
                     {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </Sel>
                 </F>
-                <F label="Pembeli" addon={<QuickAdd type="counterparty" role="buyer" onCreated={(id, name) => { setBuyers(b => [...b, { id, name }]); setKBuyer(id); }} />}>
+                <F label="Pembeli" addon={<QuickAdd type="counterparty" role="buyer" onCreated={(id, name) => { setBuyers(b => b.find(x => x.id === id) ? b : [...b, { id, name }]); setKBuyer(id); }} />}>
                   <Sel value={kBuyer} onChange={setKBuyer}>
                     <option value="">— Tanpa pembeli —</option>
                     {buyers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -671,7 +889,7 @@ export default function TransactionForm() {
             <p style={{ fontSize: 12, color: "#5A5045", marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Info Transaksi</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <Grid cols={2}>
-                <F label="Pembeli" addon={<QuickAdd type="counterparty" role="buyer" onCreated={(id, name) => { setBuyers(b => [...b, { id, name }]); setSwBuyer(id); }} />}>
+                <F label="Pembeli" addon={<QuickAdd type="counterparty" role="buyer" onCreated={(id, name) => { setBuyers(b => b.find(x => x.id === id) ? b : [...b, { id, name }]); setSwBuyer(id); }} />}>
                   <Sel value={swBuyer} onChange={setSwBuyer}>
                     <option value="">— Tanpa pembeli —</option>
                     {buyers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -724,7 +942,7 @@ export default function TransactionForm() {
                   <Inp type="number" value={swCost} onChange={setSwCost} placeholder="0" />
                 </F>
               </Grid>
-              <F label="Supplier Penggantian" addon={<QuickAdd type="counterparty" role="supplier" onCreated={(id, name) => { setSuppliers(s => [...s, { id, name }]); setSwSupp(id); }} />}>
+              <F label="Supplier Penggantian" addon={<QuickAdd type="counterparty" role="supplier" onCreated={(id, name) => { setSuppliers(s => s.find(x => x.id === id) ? s : [...s, { id, name }]); setSwSupp(id); }} />}>
                 <Sel value={swSupp} onChange={setSwSupp}>
                   <option value="">— Opsional —</option>
                   {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -753,13 +971,13 @@ export default function TransactionForm() {
               <p style={{ fontSize: 12, color: "#5A5045", marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Unit Pengganti dari Supplier</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <Grid cols={2}>
-                  <F label="Supplier *" addon={<QuickAdd type="counterparty" role="supplier" onCreated={(id, name) => { setSuppliers(s => [...s, { id, name }]); setSwRepSupp(id); }} />}>
+                  <F label="Supplier *" addon={<QuickAdd type="counterparty" role="supplier" onCreated={(id, name) => { setSuppliers(s => s.find(x => x.id === id) ? s : [...s, { id, name }]); setSwRepSupp(id); }} />}>
                     <Sel value={swRepSupp} onChange={setSwRepSupp}>
                       <option value="">— Pilih supplier —</option>
                       {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </Sel>
                   </F>
-                  <F label="Pemilik *" addon={<QuickAdd type="owner" onCreated={(id, name) => { setOwners(o => [...o, { id, name }]); setSwRepOwner(id); }} />}>
+                  <F label="Pemilik *" addon={<QuickAdd type="owner" onCreated={(id, name) => { setOwners(o => o.find(x => x.id === id) ? o : [...o, { id, name }]); setSwRepOwner(id); }} />}>
                     <Sel value={swRepOwner} onChange={setSwRepOwner}>
                       <option value="">— Pilih pemilik —</option>
                       {owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}

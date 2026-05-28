@@ -126,3 +126,7 @@ body > * { position: relative; z-index: 1; }
 }
 .ci:focus { border-color: var(--gold); }
 .ci::placeholder { color: var(--muted); }
+
+/* Admin table row hover — used in server components (no JS event handlers) */
+.adm-tr-hover { transition: background 0.15s; }
+.adm-tr-hover:hover { background: rgba(201, 168, 76, 0.03); }

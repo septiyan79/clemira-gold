@@ -48,6 +48,8 @@ const menuGroups: MenuGroup[] = [
   {
     label: "Transaksi",
     items: [
+      { href: "/admin/purchases", icon: "↓", label: "Pembelian" },
+      { href: "/admin/sales",     icon: "↑", label: "Penjualan" },
       {
         icon: "✦",
         label: "Catat Transaksi",
@@ -61,9 +63,10 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    label: "User",
+    label: "Master Data",
     items: [
-      { href: "/admin/users", icon: "◉", label: "User Management" },
+      { href: "/admin/counterparties", icon: "◎", label: "Counterparty" },
+      { href: "/admin/users",          icon: "◉", label: "User Management" },
     ],
   },
 ];

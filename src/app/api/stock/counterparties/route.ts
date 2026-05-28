@@ -5,10 +5,15 @@ const VALID_ROLES = ["buyer", "supplier"];
 
 export async function GET(req: NextRequest) {
   const role = req.nextUrl.searchParams.get("role"); // filter by role in type array
+  const q    = req.nextUrl.searchParams.get("q");    // name search (for combobox)
 
   const counterparties = await prisma.counterparty.findMany({
-    where: role ? { type: { has: role } } : undefined,
+    where: {
+      ...(role ? { type: { has: role } } : {}),
+      ...(q    ? { name: { contains: q, mode: "insensitive" } } : {}),
+    },
     orderBy: { name: "asc" },
+    ...(q ? { take: 10 } : {}), // limit search results for combobox
   });
 
   return Response.json(counterparties);
