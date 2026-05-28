@@ -4,36 +4,60 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  TrendingUp,
+  Calendar,
+  CalendarDays,
+  CalendarCheck,
+  Boxes,
+  List,
+  PackagePlus,
+  Receipt,
+  FilePlus2,
+  ShoppingBag,
+  PackageCheck,
+  ArrowRightLeft,
+  AlertTriangle,
+  Users,
+  UserCog,
+  ChevronDown,
+} from "lucide-react";
 
-type MenuItem = { href: string; icon: string; label: string };
+// ── Types ─────────────────────────────────────────────────────────────────────
+type MenuItem = { href: string; icon: LucideIcon; label: string };
+type SubMenuItem = { href: string; icon: LucideIcon; label: string };
 type MenuGroup = {
   label: string;
-  items: (MenuItem | { icon: string; label: string; submenu: MenuItem[] })[];
+  items: (MenuItem | { icon: LucideIcon; label: string; submenu: SubMenuItem[] })[];
 };
 
+// ── Menu definition ───────────────────────────────────────────────────────────
 const menuGroups: MenuGroup[] = [
   {
     label: "Home",
     items: [
-      { href: "/admin", icon: "⬡", label: "Dashboard" },
+      { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
     ],
   },
   {
     label: "Produk",
     items: [
-      { href: "/admin/products", icon: "◈", label: "List of Product" },
+      { href: "/admin/products", icon: Package, label: "List of Product" },
     ],
   },
   {
     label: "Harga Antam",
     items: [
       {
-        icon: "◎",
+        icon: TrendingUp,
         label: "Harga",
         submenu: [
-          { href: "/admin/price",         icon: "·", label: "Harian"  },
-          { href: "/admin/price/monthly", icon: "·", label: "Bulanan" },
-          { href: "/admin/price/yearly",  icon: "·", label: "Tahunan" },
+          { href: "/admin/price",         icon: Calendar,      label: "Harian"  },
+          { href: "/admin/price/monthly", icon: CalendarDays,  label: "Bulanan" },
+          { href: "/admin/price/yearly",  icon: CalendarCheck, label: "Tahunan" },
         ],
       },
     ],
@@ -41,23 +65,23 @@ const menuGroups: MenuGroup[] = [
   {
     label: "Stok",
     items: [
-      { href: "/admin/stock",       icon: "▣", label: "Dashboard Stok" },
-      { href: "/admin/stock/units", icon: "·", label: "Daftar Unit"    },
+      { href: "/admin/stock",       icon: Boxes, label: "Dashboard Stok" },
+      { href: "/admin/stock/units", icon: List,  label: "Daftar Unit"    },
     ],
   },
   {
     label: "Transaksi",
     items: [
-      { href: "/admin/purchases", icon: "↓", label: "Pembelian" },
-      { href: "/admin/sales",     icon: "↑", label: "Penjualan" },
+      { href: "/admin/purchases", icon: PackagePlus, label: "Pembelian" },
+      { href: "/admin/sales",     icon: Receipt,     label: "Penjualan" },
       {
-        icon: "✦",
+        icon: FilePlus2,
         label: "Catat Transaksi",
         submenu: [
-          { href: "/admin/transactions/new?tab=beli",                icon: "·", label: "Beli Stok"        },
-          { href: "/admin/transactions/new?tab=konsinyasi",          icon: "·", label: "Konsinyasi"       },
-          { href: "/admin/transactions/new?tab=swap",                icon: "·", label: "Swap"             },
-          { href: "/admin/transactions/outstanding-swaps",           icon: "·", label: "Outstanding Swaps"},
+          { href: "/admin/transactions/new?tab=beli",       icon: ShoppingBag,    label: "Beli Stok"         },
+          { href: "/admin/transactions/new?tab=konsinyasi", icon: PackageCheck,   label: "Konsinyasi"        },
+          { href: "/admin/transactions/new?tab=swap",       icon: ArrowRightLeft, label: "Swap"              },
+          { href: "/admin/transactions/outstanding-swaps",  icon: AlertTriangle,  label: "Outstanding Swaps" },
         ],
       },
     ],
@@ -65,15 +89,17 @@ const menuGroups: MenuGroup[] = [
   {
     label: "Master Data",
     items: [
-      { href: "/admin/counterparties", icon: "◎", label: "Counterparty" },
-      { href: "/admin/users",          icon: "◉", label: "User Management" },
+      { href: "/admin/counterparties", icon: Users,   label: "Counterparty"    },
+      { href: "/admin/users",          icon: UserCog, label: "User Management" },
     ],
   },
 ];
 
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const pathname      = usePathname();
-  const searchParams  = useSearchParams();
+  const pathname     = usePathname();
+  const searchParams = useSearchParams();
+
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
     Harga:             pathname.startsWith("/admin/price"),
     "Catat Transaksi": pathname.startsWith("/admin/transactions"),
@@ -96,9 +122,7 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
       <div style={{
         padding: "24px 20px",
         borderBottom: "1px solid rgba(201,168,76,0.15)",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
+        display: "flex", alignItems: "center", gap: "10px",
       }}>
         <Image src="/Logo CG.png" alt="Clemira Gold" width={24} height={24} style={{ objectFit: "contain" }} />
         <div>
@@ -115,76 +139,65 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
       <nav style={{ flex: 1, padding: "16px 0", overflowY: "auto" }}>
         {menuGroups.map((group) => (
           <div key={group.label} style={{ marginBottom: "8px" }}>
+            {/* Group label */}
             <div style={{
-              fontSize: "10px",
-              letterSpacing: "2px",
-              color: "#3A342A",
-              textTransform: "uppercase",
-              padding: "8px 20px 4px",
+              fontSize: "10px", letterSpacing: "2px", color: "#3A342A",
+              textTransform: "uppercase", padding: "8px 20px 4px",
             }}>
               {group.label}
             </div>
 
             {group.items.map((item) => {
+              // ── Submenu parent ──
               if ("submenu" in item) {
                 const isOpen      = openMenus[item.label] ?? false;
                 const isAnyActive = item.submenu.some(s => pathname.startsWith(s.href.split("?")[0]));
+                const Icon        = item.icon;
                 return (
                   <div key={item.label}>
-                    {/* Parent toggle */}
                     <button
                       onClick={() => toggleMenu(item.label)}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        width: "100%",
-                        padding: "10px 20px",
-                        fontSize: "14px",
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: "100%", padding: "10px 20px", fontSize: "14px",
                         color: isAnyActive || isOpen ? "var(--gold)" : "#7A6E5F",
                         background: isAnyActive ? "rgba(201,168,76,0.08)" : "transparent",
                         borderLeft: isAnyActive ? "2px solid var(--gold)" : "2px solid transparent",
-                        border: "none",
-                        cursor: "pointer",
+                        border: "none", cursor: "pointer",
                         fontFamily: "var(--font-dm-sans), sans-serif",
-                        transition: "all 0.2s",
-                        textAlign: "left",
+                        transition: "all 0.2s", textAlign: "left",
                       }}
                     >
                       <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <span style={{ fontSize: "16px" }}>{item.icon}</span>
+                        <Icon size={16} />
                         {item.label}
                       </span>
-                      <span style={{
-                        fontSize: "10px",
+                      <ChevronDown size={13} style={{
                         transition: "transform .2s",
                         transform: isOpen ? "rotate(180deg)" : "none",
-                      }}>▼</span>
+                        opacity: 0.6,
+                      }} />
                     </button>
 
-                    {/* Submenu */}
+                    {/* Submenu items */}
                     {isOpen && (
                       <div style={{ borderLeft: "1px solid rgba(201,168,76,0.12)", marginLeft: "30px" }}>
                         {item.submenu.map(sub => {
-                          const [subPath, subQuery] = sub.href.split("?");
-                          const isActive = subQuery
-                            ? pathname === subPath &&
-                              new URLSearchParams(subQuery).get("tab") === searchParams.get("tab")
+                          const SubIcon              = sub.icon;
+                          const [subPath, subQuery]  = sub.href.split("?");
+                          const isActive             = subQuery
+                            ? pathname === subPath && new URLSearchParams(subQuery).get("tab") === searchParams.get("tab")
                             : pathname === subPath;
                           return (
                             <Link key={sub.href} href={sub.href} style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              padding: "8px 16px",
-                              fontSize: "13px",
+                              display: "flex", alignItems: "center", gap: "10px",
+                              padding: "8px 16px", fontSize: "13px",
                               color: isActive ? "var(--gold)" : "#6A5E4F",
                               background: isActive ? "rgba(201,168,76,0.06)" : "transparent",
                               borderLeft: isActive ? "2px solid var(--gold)" : "2px solid transparent",
-                              textDecoration: "none",
-                              transition: "all 0.2s",
+                              textDecoration: "none", transition: "all 0.2s",
                             }}>
-                              <span style={{ fontSize: "18px", lineHeight: 1 }}>{sub.icon}</span>
+                              <SubIcon size={14} />
                               {sub.label}
                             </Link>
                           );
@@ -195,21 +208,19 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
                 );
               }
 
+              // ── Regular item ──
+              const Icon     = item.icon;
               const isActive = pathname === item.href;
               return (
                 <Link key={item.href} href={item.href} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "10px 20px",
-                  fontSize: "14px",
+                  display: "flex", alignItems: "center", gap: "10px",
+                  padding: "10px 20px", fontSize: "14px",
                   color: isActive ? "var(--gold)" : "#7A6E5F",
                   background: isActive ? "rgba(201,168,76,0.08)" : "transparent",
                   borderLeft: isActive ? "2px solid var(--gold)" : "2px solid transparent",
-                  textDecoration: "none",
-                  transition: "all 0.2s",
+                  textDecoration: "none", transition: "all 0.2s",
                 }}>
-                  <span style={{ fontSize: "16px" }}>{item.icon}</span>
+                  <Icon size={16} />
                   {item.label}
                 </Link>
               );
