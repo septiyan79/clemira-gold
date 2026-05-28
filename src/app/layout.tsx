@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import { Analytics } from "@vercel/analytics/next";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -32,6 +33,7 @@ export default function RootLayout({
     <html lang="id" className={`${dmSans.variable} ${cormorant.variable}`}>
       <body style={{ position: "relative" }}>
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
