@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { generateInvoiceNo } from "@/lib/invoice";
 
 interface UnitInput {
   productId: string;
@@ -64,12 +65,16 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await prisma.$transaction(async (tx) => {
+    const poDate = purchasedAt ? new Date(purchasedAt) : new Date();
+    const invoiceNo = await generateInvoiceNo("PO", tx, poDate);
+
     const order = await tx.purchaseOrder.create({
       data: {
         supplierId,
+        invoiceNo,
         goldSpotPrice,
         totalAmount,
-        purchasedAt: purchasedAt ? new Date(purchasedAt) : new Date(),
+        purchasedAt: poDate,
         notes,
       },
     });

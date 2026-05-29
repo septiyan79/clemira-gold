@@ -117,7 +117,7 @@ export default async function PurchasesPage({
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 700 }}>
                 <thead>
                   <tr>
-                    {["Tgl Beli", "Supplier", "Unit", "Total", "Spot Price", "Catatan"].map(h => (
+                    {["Bukti Beli", "Tgl Beli", "Supplier", "Unit", "Total", "Spot Price", "Catatan"].map(h => (
                       <th key={h} style={thStyle}>{h}</th>
                     ))}
                   </tr>
@@ -125,6 +125,24 @@ export default async function PurchasesPage({
                 <tbody>
                   {orders.map((order) => (
                     <tr key={order.id} className="adm-tr-hover">
+                      <td style={tdStyle}>
+                        {order.invoiceNo ? (
+                          <a
+                            href={`/admin/invoices/purchases/${order.id}`}
+                            style={{
+                              color: "#C9A84C",
+                              fontFamily: "monospace",
+                              fontSize: 12,
+                              fontWeight: 600,
+                              textDecoration: "none",
+                            }}
+                          >
+                            {order.invoiceNo}
+                          </a>
+                        ) : (
+                          <span style={{ color: "#3A342A", fontFamily: "monospace", fontSize: 11 }}>—</span>
+                        )}
+                      </td>
                       <td style={tdStyle}>
                         <div style={{ color: "#EDE8DE" }}>{fmtDate(order.purchasedAt)}</div>
                         <div style={{ fontSize: 11, color: "#3A342A", marginTop: 2, fontFamily: "monospace" }}>

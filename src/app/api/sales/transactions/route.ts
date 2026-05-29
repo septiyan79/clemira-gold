@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { generateInvoiceNo } from "@/lib/invoice";
 
 interface ConsignmentInput {
   supplierId: string;
@@ -97,11 +98,15 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await prisma.$transaction(async (tx) => {
+    const txDate = transactedAt ? new Date(transactedAt) : new Date();
+    const invoiceNo = await generateInvoiceNo("INV", tx, txDate);
+
     const transaction = await tx.transaction.create({
       data: {
         buyerId,
+        invoiceNo,
         goldSpotPrice,
-        transactedAt: transactedAt ? new Date(transactedAt) : new Date(),
+        transactedAt: txDate,
         notes,
       },
     });

@@ -138,7 +138,7 @@ export default async function SalesPage({
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 800 }}>
                 <thead>
                   <tr>
-                    {["Tgl Jual", "Pembeli", "Item", "Mode", "Harga Jual", "COGS", "Margin", "Catatan"].map(h => (
+                    {["Invoice", "Tgl Jual", "Pembeli", "Item", "Mode", "Harga Jual", "COGS", "Margin", "Catatan"].map(h => (
                       <th key={h} style={thStyle}>{h}</th>
                     ))}
                   </tr>
@@ -152,6 +152,24 @@ export default async function SalesPage({
 
                     return (
                       <tr key={tx.id} className="adm-tr-hover">
+                        <td style={tdStyle}>
+                          {tx.invoiceNo ? (
+                            <a
+                              href={`/admin/invoices/sales/${tx.id}`}
+                              style={{
+                                color: "#C9A84C",
+                                fontFamily: "monospace",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                textDecoration: "none",
+                              }}
+                            >
+                              {tx.invoiceNo}
+                            </a>
+                          ) : (
+                            <span style={{ color: "#3A342A", fontFamily: "monospace", fontSize: 11 }}>—</span>
+                          )}
+                        </td>
                         <td style={tdStyle}>
                           <div style={{ color: "#EDE8DE" }}>{fmtDate(tx.transactedAt)}</div>
                           <div style={{ fontSize: 11, color: "#3A342A", marginTop: 2, fontFamily: "monospace" }}>
