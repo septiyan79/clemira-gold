@@ -164,13 +164,16 @@ model PurchaseOrderLine {
 }
 
 model Transaction {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   buyerId       String?
-  invoiceNo     String?  @unique
-  goldSpotPrice Decimal? @db.Decimal(12, 2)
-  transactedAt  DateTime @default(now())
+  invoiceNo     String?   @unique
+  status        String    @default("pending") @db.VarChar(20) // 'pending' | 'paid'
+  receiptNo     String?   @unique
+  paidAt        DateTime?
+  goldSpotPrice Decimal?  @db.Decimal(12, 2)
+  transactedAt  DateTime  @default(now())
   notes         String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
 
   buyer Counterparty?     @relation(fields: [buyerId], references: [id])
   lines TransactionLine[]

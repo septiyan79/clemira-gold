@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import PrintButton from "@/components/admin/PrintButton";
 import ShareWhatsAppButton from "@/components/admin/ShareWhatsAppButton";
+import InvoiceActions from "@/components/admin/InvoiceActions";
 
 export const dynamic = "force-dynamic";
 
@@ -102,10 +103,34 @@ export default async function SalesInvoicePage({
       `}</style>
 
       <div className="invoice-page-bg">
-        {/* Tombol aksi — di luar kertas */}
-        <div className="no-print" style={{ maxWidth: 794, margin: "0 auto", paddingBottom: 16, display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <ShareWhatsAppButton invoiceNo={tx.invoiceNo ?? ""} />
-          <PrintButton />
+        {/* ── Toolbar ── */}
+        <div className="no-print" style={{
+          maxWidth: 794,
+          margin: "0 auto",
+          marginBottom: 16,
+          background: "rgba(255,255,255,0.05)",
+          border: "1px solid rgba(201,168,76,0.2)",
+          borderRadius: 10,
+          padding: "10px 16px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          backdropFilter: "blur(8px)",
+        }}>
+          {/* Kiri: aksi transaksi */}
+          <InvoiceActions
+            transactionId={tx.id}
+            status={tx.status}
+            invoiceNo={tx.invoiceNo ?? ""}
+          />
+          {/* Divider */}
+          <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.12)", flexShrink: 0 }} />
+          {/* Kanan: aksi dokumen */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <ShareWhatsAppButton invoiceNo={tx.invoiceNo ?? ""} />
+            <PrintButton />
+          </div>
         </div>
 
       <div id="invoice-content" className="invoice-wrap" style={{ fontFamily: "'Segoe UI', sans-serif", color: "#333" }}>

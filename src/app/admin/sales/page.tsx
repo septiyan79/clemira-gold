@@ -138,7 +138,7 @@ export default async function SalesPage({
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 800 }}>
                 <thead>
                   <tr>
-                    {["Invoice", "Tgl Jual", "Pembeli", "Item", "Mode", "Harga Jual", "COGS", "Margin", "Catatan"].map(h => (
+                    {["Invoice", "Status", "Tgl Jual", "Pembeli", "Item", "Mode", "Harga Jual", "COGS", "Margin", "Catatan"].map(h => (
                       <th key={h} style={thStyle}>{h}</th>
                     ))}
                   </tr>
@@ -168,6 +168,26 @@ export default async function SalesPage({
                             </a>
                           ) : (
                             <span style={{ color: "#3A342A", fontFamily: "monospace", fontSize: 11 }}>—</span>
+                          )}
+                          {/* Link kwitansi jika sudah lunas */}
+                          {tx.status === "paid" && tx.receiptNo && (
+                            <a
+                              href={`/admin/invoices/receipts/${tx.id}`}
+                              style={{ display: "block", marginTop: 4, color: "#4CAF50", fontSize: 11, fontFamily: "monospace", textDecoration: "none" }}
+                            >
+                              {tx.receiptNo}
+                            </a>
+                          )}
+                        </td>
+                        <td style={tdStyle}>
+                          {tx.status === "paid" ? (
+                            <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "rgba(76,175,80,.12)", color: "#4CAF50" }}>
+                              Lunas
+                            </span>
+                          ) : (
+                            <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "rgba(255,193,7,.1)", color: "#FFC107" }}>
+                              Pending
+                            </span>
                           )}
                         </td>
                         <td style={tdStyle}>

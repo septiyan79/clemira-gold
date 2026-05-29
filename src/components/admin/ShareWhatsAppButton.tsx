@@ -87,18 +87,19 @@ export default function ShareWhatsAppButton({ invoiceNo }: { invoiceNo: string }
       onClick={handleShare}
       disabled={loading}
       style={{
-        padding: "10px 20px",
-        background: loading ? "#ccc" : "#25D366",
-        color: "#fff",
-        border: "none",
-        borderRadius: 6,
+        padding: "8px 16px",
+        background: loading ? "rgba(255,255,255,0.06)" : "rgba(37,211,102,0.12)",
+        color: loading ? "#888" : "#25D366",
+        border: `1px solid ${loading ? "rgba(255,255,255,0.1)" : "rgba(37,211,102,0.4)"}`,
+        borderRadius: 7,
         fontWeight: 600,
-        fontSize: 14,
+        fontSize: 13,
         cursor: loading ? "not-allowed" : "pointer",
         display: "flex",
         alignItems: "center",
-        gap: 8,
-        transition: "background 0.2s",
+        gap: 7,
+        transition: "all 0.2s",
+        letterSpacing: 0.2,
       }}
     >
       {loading ? (

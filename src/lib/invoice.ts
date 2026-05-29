@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 export async function generateInvoiceNo(
-  prefix: "INV" | "PO",
+  prefix: "INV" | "PO" | "KWT",
   tx: Prisma.TransactionClient,
   atDate?: Date
 ): Promise<string> {
