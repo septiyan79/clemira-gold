@@ -24,6 +24,7 @@ import {
   Users,
   UserCog,
   ChevronDown,
+  BarChart2,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -84,6 +85,12 @@ const menuGroups: MenuGroup[] = [
           { href: "/admin/transactions/outstanding-swaps",  icon: AlertTriangle,  label: "Outstanding Swaps" },
         ],
       },
+    ],
+  },
+  {
+    label: "Laporan",
+    items: [
+      { href: "/admin/reports/profit", icon: BarChart2, label: "Laba Bulanan" },
     ],
   },
   {
