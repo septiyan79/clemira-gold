@@ -84,7 +84,7 @@ export default async function StockUnitsPage() {
       condition:    u.condition,
       status:       u.status,
       purchasedAt:  (u.purchaseOrderLine?.purchaseOrder.purchasedAt ?? u.createdAt).toISOString(),
-      source: u.swapEventsReplacement.length > 0 ? "swap" : u.purchaseOrderLine ? "purchase" : "unknown",
+      source: (u.swapEventsReplacement.length > 0 ? "swap" : u.purchaseOrderLine ? "purchase" : "unknown") as "swap" | "purchase" | "unknown",
       referencePrice:      u.referencePrice?.toNumber() ?? null,
       actualPurchasePrice: u.actualPurchasePrice?.toNumber() ?? null,
       antamDasar,
