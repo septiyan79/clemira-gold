@@ -10,9 +10,12 @@ export type UnitRow = {
   mintYear: number | null;
   condition: string;
   status: string;
-  createdAt: string;
+  purchasedAt: string;
+  source: "purchase" | "swap" | "unknown";
   referencePrice: number | null;
   actualPurchasePrice: number | null;
+  antamDasar:   number | null;
+  antamBuyback: number | null;
   product: { brand: string | null; weightGram: number; series: string | null };
   owner: { name: string };
   sale: { sellPrice: number; margin: number; transactedAt: string } | null;
@@ -115,13 +118,17 @@ function Pagination({ page, total, onChange }: { page: number; total: number; on
 }
 
 export default function StockTable({ units }: { units: UnitRow[] }) {
-  const [tab,         setTab]         = useState<Tab>("tersedia");
-  const [page,        setPage]        = useState(1);
-  const [ownerFilter, setOwnerFilter] = useState("all");
-  const [statusFilter,setStatusFilter]= useState("all");
-  const [search,      setSearch]      = useState("");
+  const [tab,          setTab]          = useState<Tab>("tersedia");
+  const [page,         setPage]         = useState(1);
+  const [ownerFilter,  setOwnerFilter]  = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [beratFilter,  setBeratFilter]  = useState("all");
+  const [tahunFilter,  setTahunFilter]  = useState("all");
+  const [search,       setSearch]       = useState("");
 
-  const owners = [...new Set(units.map((u) => u.owner.name))].sort();
+  const owners  = [...new Set(units.map((u) => u.owner.name))].sort();
+  const weights = [...new Set(units.map((u) => u.product.weightGram))].sort((a, b) => a - b);
+  const years   = [...new Set(units.map((u) => u.mintYear).filter((y): y is number => y != null))].sort((a, b) => b - a);
 
   const byTab = tab === "tersedia"
     ? units.filter((u) => u.status === "available" || u.status === "reserved")
@@ -130,6 +137,8 @@ export default function StockTable({ units }: { units: UnitRow[] }) {
   const filtered = byTab.filter((u) => {
     if (ownerFilter  !== "all" && u.owner.name !== ownerFilter) return false;
     if (tab === "tersedia" && statusFilter !== "all" && u.status !== statusFilter) return false;
+    if (beratFilter  !== "all" && String(u.product.weightGram) !== beratFilter) return false;
+    if (tahunFilter  !== "all" && String(u.mintYear ?? "") !== tahunFilter) return false;
     if (search) {
       const q = search.toLowerCase();
       return (
@@ -149,10 +158,13 @@ export default function StockTable({ units }: { units: UnitRow[] }) {
   const countTersedia = units.filter((u) => u.status === "available" || u.status === "reserved").length;
   const countTerjual  = units.filter((u) => u.status === "sold" || u.status === "swapped_out").length;
 
-  function switchTab(t: Tab) { setTab(t); setPage(1); setSearch(""); setStatusFilter("all"); }
+  function switchTab(t: Tab) {
+    setTab(t); setPage(1); setSearch("");
+    setStatusFilter("all"); setBeratFilter("all"); setTahunFilter("all");
+  }
   function changeFilter() { setPage(1); }
 
-  const colSpan = tab === "tersedia" ? 11 : 11;
+  const colSpan = tab === "tersedia" ? 11 : 9;
 
   return (
     <>
@@ -195,6 +207,14 @@ export default function StockTable({ units }: { units: UnitRow[] }) {
             onChange={(e) => { setSearch(e.target.value); changeFilter(); }}
             style={{ width: 200 }}
           />
+          <select className="sl-in" value={beratFilter} onChange={(e) => { setBeratFilter(e.target.value); changeFilter(); }}>
+            <option value="all">Semua Berat</option>
+            {weights.map((w) => <option key={w} value={String(w)}>{w} gr</option>)}
+          </select>
+          <select className="sl-in" value={tahunFilter} onChange={(e) => { setTahunFilter(e.target.value); changeFilter(); }}>
+            <option value="all">Semua Tahun</option>
+            {years.map((y) => <option key={y} value={String(y)}>{y}</option>)}
+          </select>
           {tab === "tersedia" && (
             <select className="sl-in" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); changeFilter(); }}>
               <option value="all">Semua Status</option>
@@ -218,16 +238,38 @@ export default function StockTable({ units }: { units: UnitRow[] }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 780 }}>
           <thead>
             <tr>
-              {(tab === "tersedia"
-                ? ["Brand","Berat","Series","Thn Cetak","Serial Number","Cert Code","Kondisi","Status","Pemilik","Harga Ref","Tgl Masuk"]
-                : ["Brand","Berat","Series","Thn Cetak","Serial Number","Cert Code","Kondisi","Status","Pemilik","Harga Jual","Margin","Tgl Jual"]
-              ).map((h) => (
-                <th key={h} style={{
+              {(tab === "tersedia" ? [
+                { label: "Brand",             tooltip: "Merek produk emas (Antam, UBS, dll)" },
+                { label: "Berat",             tooltip: "Berat unit dalam gram" },
+                { label: "Series",            tooltip: "Seri produk (Regular, Gift, Batik, dll)" },
+                { label: "Thn Cetak",         tooltip: "Tahun cetak / mintage unit" },
+                { label: "Serial Number",     tooltip: "Nomor seri fisik yang tertera di unit" },
+                { label: "Cert Code",         tooltip: "Kode sertifikat keaslian unit" },
+                { label: "Pemilik",           tooltip: "Pemilik unit saat ini (Toko atau Personal)" },
+                { label: "Tgl Masuk",         tooltip: "Tanggal unit dibeli dari supplier (dari PurchaseOrder). Untuk unit pengganti swap: tanggal unit pengganti dibeli, bukan tanggal transaksi swap-nya." },
+                { label: "Harga Ref",         tooltip: "Acuan COGS saat unit dijual. Untuk unit pengganti swap: DIWARISKAN dari unit yang diganti (bukan harga beli unit pengganti). Untuk pembelian biasa: sama dengan harga beli." },
+                { label: "Buyback Antam",     tooltip: "Harga buyback Antam hari ini. Selisih (+/-) dihitung terhadap Harga Ref" },
+                { label: "Harga Dasar Antam", tooltip: "Harga jual dasar Antam hari ini. Selisih (+/-) dihitung terhadap Harga Ref" },
+              ] : [
+                { label: "Brand",         tooltip: "Merek produk emas" },
+                { label: "Berat",         tooltip: "Berat unit dalam gram" },
+                { label: "Series",        tooltip: "Seri produk" },
+                { label: "Thn Cetak",     tooltip: "Tahun cetak unit" },
+                { label: "Serial Number", tooltip: "Nomor seri fisik unit" },
+                { label: "Cert Code",     tooltip: "Kode sertifikat unit" },
+                { label: "Pemilik",       tooltip: "Pemilik unit" },
+                { label: "Harga Jual",    tooltip: "Harga jual aktual ke pembeli" },
+                { label: "Margin",        tooltip: "Keuntungan bersih = Harga Jual - COGS" },
+                { label: "Tgl Jual",      tooltip: "Tanggal transaksi penjualan" },
+              ]).map(({ label, tooltip }) => (
+                <th key={label} title={tooltip} style={{
                   padding: "10px 12px", fontSize: 10, letterSpacing: 1.5, color: "#5A5045",
                   textTransform: "uppercase", textAlign: "left", fontWeight: 500,
                   borderBottom: "1px solid rgba(201,168,76,.2)", whiteSpace: "nowrap",
+                  cursor: "help",
                 }}>
-                  {h}
+                  {label}
+                  <span style={{ marginLeft: 4, opacity: 0.4, fontSize: 9 }}>?</span>
                 </th>
               ))}
             </tr>
@@ -239,57 +281,95 @@ export default function StockTable({ units }: { units: UnitRow[] }) {
                   Tidak ada unit ditemukan
                 </td>
               </tr>
-            ) : paginated.map((u) => (
-              <tr
-                key={u.id}
-                onMouseOver={(e)  => (e.currentTarget.style.background = "rgba(201,168,76,.03)")}
-                onMouseOut={(e)   => (e.currentTarget.style.background = "")}
-                style={{ transition: "background .15s" }}
-              >
-                <td style={{ padding: "11px 12px", color: "var(--gold)", fontWeight: 500 }}>{u.product.brand ?? "—"}</td>
-                <Cell>{u.product.weightGram} gr</Cell>
-                <td style={{ padding: "11px 12px", color: "#7A6E5F" }}>{u.product.series ?? "—"}</td>
-                <td style={{ padding: "11px 12px", color: "#7A6E5F" }}>{u.mintYear ?? "—"}</td>
-                <td style={{ padding: "11px 12px", color: "#EDE8DE" }}>
-                  <Mono>{u.serialNumber ?? <span style={{ color: "#3A342A" }}>—</span>}</Mono>
-                </td>
-                <td style={{ padding: "11px 12px", color: "#9A8E7E" }}>
-                  <Mono>{u.certCode ?? <span style={{ color: "#3A342A" }}>—</span>}</Mono>
-                </td>
-                <td style={{ padding: "11px 12px" }}>
-                  <span style={{
-                    fontSize: 12, borderRadius: 20, padding: "3px 10px",
-                    color: u.condition === "new" ? "#4CAF50" : "#7A6E5F",
-                    background: u.condition === "new" ? "rgba(76,175,80,.08)" : "rgba(255,255,255,.04)",
-                    border: `1px solid ${u.condition === "new" ? "rgba(76,175,80,.2)" : "rgba(255,255,255,.08)"}`,
-                  }}>
-                    {CONDITION_LABEL[u.condition] ?? u.condition}
-                  </span>
-                </td>
-                <td style={{ padding: "11px 12px" }}><StatusBadge status={u.status} /></td>
-                <td style={{ padding: "11px 12px", color: "#7A6E5F" }}>{u.owner.name}</td>
+            ) : paginated.map((u) => {
+              const selisihBuyback = (u.antamBuyback != null && u.referencePrice != null)
+                ? u.antamBuyback - u.referencePrice : null;
+              const selisihDasar   = (u.antamDasar   != null && u.referencePrice != null)
+                ? u.antamDasar   - u.referencePrice : null;
 
-                {tab === "tersedia" ? (
-                  <>
-                    <Cell>{u.referencePrice ? fmt(u.referencePrice) : <span style={{ color: "#3A342A" }}>—</span>}</Cell>
-                    <td style={{ padding: "11px 12px", color: "#5A5045", whiteSpace: "nowrap" }}>{fmtDate(u.createdAt)}</td>
-                  </>
-                ) : (
-                  <>
-                    <Cell>{u.sale ? fmt(u.sale.sellPrice) : <span style={{ color: "#3A342A" }}>—</span>}</Cell>
-                    <td style={{ padding: "11px 12px", whiteSpace: "nowrap" }}>
-                      {u.sale
-                        ? <span style={{ color: u.sale.margin >= 0 ? "#4CAF50" : "#EF5350" }}>{fmt(u.sale.margin)}</span>
-                        : <span style={{ color: "#3A342A" }}>—</span>
-                      }
-                    </td>
-                    <td style={{ padding: "11px 12px", color: "#5A5045", whiteSpace: "nowrap" }}>
-                      {u.sale ? fmtDate(u.sale.transactedAt) : "—"}
-                    </td>
-                  </>
-                )}
-              </tr>
-            ))}
+              return (
+                <tr
+                  key={u.id}
+                  onMouseOver={(e)  => (e.currentTarget.style.background = "rgba(201,168,76,.03)")}
+                  onMouseOut={(e)   => (e.currentTarget.style.background = "")}
+                  style={{ transition: "background .15s" }}
+                >
+                  <td style={{ padding: "11px 12px", color: "var(--gold)", fontWeight: 500 }}>{u.product.brand ?? "—"}</td>
+                  <Cell>{u.product.weightGram} gr</Cell>
+                  <td style={{ padding: "11px 12px", color: "#7A6E5F" }}>{u.product.series ?? "—"}</td>
+                  <td style={{ padding: "11px 12px", color: "#7A6E5F" }}>{u.mintYear ?? "—"}</td>
+                  <td style={{ padding: "11px 12px", color: "#EDE8DE" }}>
+                    <Mono>{u.serialNumber ?? <span style={{ color: "#3A342A" }}>—</span>}</Mono>
+                  </td>
+                  <td style={{ padding: "11px 12px", color: "#9A8E7E" }}>
+                    <Mono>{u.certCode ?? <span style={{ color: "#3A342A" }}>—</span>}</Mono>
+                  </td>
+                  <td style={{ padding: "11px 12px", color: "#7A6E5F" }}>{u.owner.name}</td>
+
+                  {tab === "tersedia" ? (
+                    <>
+                      <td style={{ padding: "11px 12px", whiteSpace: "nowrap" }}>
+                        <div style={{ color: "#5A5045" }}>{fmtDate(u.purchasedAt)}</div>
+                        {u.source !== "unknown" && (
+                          <span style={{
+                            display: "inline-block", marginTop: 3, fontSize: 10, padding: "1px 7px",
+                            borderRadius: 10, fontWeight: 500,
+                            ...(u.source === "swap"
+                              ? { color: "#CE93D8", background: "rgba(206,147,216,.12)", border: "1px solid rgba(206,147,216,.25)" }
+                              : { color: "#C9A84C", background: "rgba(201,168,76,.1)",   border: "1px solid rgba(201,168,76,.25)" }
+                            ),
+                          }}>
+                            {u.source === "swap" ? "Swap" : "Pembelian"}
+                          </span>
+                        )}
+                      </td>
+                      <Cell>{u.referencePrice ? fmt(u.referencePrice) : <span style={{ color: "#3A342A" }}>—</span>}</Cell>
+
+                      {/* Buyback Antam + selisih */}
+                      <td style={{ padding: "11px 12px", whiteSpace: "nowrap" }}>
+                        {u.antamBuyback ? (
+                          <>
+                            <span style={{ color: "#64B5F6" }}>{fmt(u.antamBuyback)}</span>
+                            {selisihBuyback != null && (
+                              <div style={{ fontSize: 11, marginTop: 2, color: selisihBuyback >= 0 ? "#4CAF50" : "#EF5350" }}>
+                                {selisihBuyback >= 0 ? "+" : ""}{fmt(selisihBuyback)}
+                              </div>
+                            )}
+                          </>
+                        ) : <span style={{ color: "#3A342A" }}>—</span>}
+                      </td>
+
+                      {/* Harga Dasar Antam + selisih */}
+                      <td style={{ padding: "11px 12px", whiteSpace: "nowrap" }}>
+                        {u.antamDasar ? (
+                          <>
+                            <span style={{ color: "#C9A84C" }}>{fmt(u.antamDasar)}</span>
+                            {selisihDasar != null && (
+                              <div style={{ fontSize: 11, marginTop: 2, color: selisihDasar >= 0 ? "#4CAF50" : "#EF5350" }}>
+                                {selisihDasar >= 0 ? "+" : ""}{fmt(selisihDasar)}
+                              </div>
+                            )}
+                          </>
+                        ) : <span style={{ color: "#3A342A" }}>—</span>}
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <Cell>{u.sale ? fmt(u.sale.sellPrice) : <span style={{ color: "#3A342A" }}>—</span>}</Cell>
+                      <td style={{ padding: "11px 12px", whiteSpace: "nowrap" }}>
+                        {u.sale
+                          ? <span style={{ color: u.sale.margin >= 0 ? "#4CAF50" : "#EF5350" }}>{fmt(u.sale.margin)}</span>
+                          : <span style={{ color: "#3A342A" }}>—</span>
+                        }
+                      </td>
+                      <td style={{ padding: "11px 12px", color: "#5A5045", whiteSpace: "nowrap" }}>
+                        {u.sale ? fmtDate(u.sale.transactedAt) : "—"}
+                      </td>
+                    </>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
