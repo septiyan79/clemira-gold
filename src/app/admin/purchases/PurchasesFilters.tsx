@@ -19,6 +19,7 @@ const selStyle: React.CSSProperties = {
   color: "#9A8E7E",
   cursor: "pointer",
 };
+const optStyle: React.CSSProperties = { background: "#1A1612", color: "#EDE8DE" };
 
 export default function PurchasesFilters({ gramOptions }: Props) {
   const sp     = useSearchParams();
@@ -57,9 +58,9 @@ export default function PurchasesFilters({ gramOptions }: Props) {
       />
 
       <select value={gramasi} onChange={(e) => push("gramasi", e.target.value)} style={selStyle}>
-        <option value="">Semua Berat</option>
+        <option value="" style={optStyle}>Semua Berat</option>
         {gramOptions.map((g) => (
-          <option key={g} value={String(g)}>{g}gr</option>
+          <option key={g} value={String(g)} style={optStyle}>{g}gr</option>
         ))}
       </select>
 

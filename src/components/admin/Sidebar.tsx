@@ -14,6 +14,7 @@ import {
   CalendarCheck,
   Boxes,
   List,
+  LayoutList,
   PackagePlus,
   Receipt,
   FilePlus2,
@@ -46,7 +47,7 @@ const menuGroups: MenuGroup[] = [
   {
     label: "Produk",
     items: [
-      { href: "/admin/products", icon: Package, label: "List of Product" },
+      { href: "/admin/products", icon: Package, label: "Daftar Produk" },
     ],
   },
   {
@@ -66,8 +67,9 @@ const menuGroups: MenuGroup[] = [
   {
     label: "Stok",
     items: [
-      { href: "/admin/stock",       icon: Boxes, label: "Dashboard Stok" },
-      { href: "/admin/stock/units", icon: List,  label: "Daftar Unit"    },
+      { href: "/admin/stock",        icon: Boxes,      label: "Dashboard Stok" },
+      { href: "/admin/stock/units",  icon: List,       label: "Daftar Unit"    },
+      { href: "/admin/stock/recap",  icon: LayoutList, label: "Rekap Stok"     },
     ],
   },
   {
