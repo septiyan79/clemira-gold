@@ -1,5 +1,8 @@
+import { Suspense } from "react";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import Pagination from "@/components/admin/Pagination";
+import PurchasesFilters from "./PurchasesFilters";
 
 export const dynamic = "force-dynamic";
 
@@ -23,27 +26,76 @@ const tdStyle: React.CSSProperties = {
   borderBottom: "1px solid rgba(255,255,255,.04)", verticalAlign: "top",
 };
 
+const modeBadge = {
+  swap: { label: "Swap",  color: "#CE93D8", bg: "rgba(206,147,216,.12)" },
+  stok: { label: "Stok",  color: "#C9A84C", bg: "rgba(201,168,76,.12)"  },
+} as const;
+
 export default async function PurchasesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{
+    page?: string; q?: string; dateFrom?: string; dateTo?: string; gramasi?: string;
+  }>;
 }) {
-  const { page: pageParam } = await searchParams;
-  const rawPage = parseInt(pageParam ?? "1", 10);
+  const params = await searchParams;
 
-  // All-time KPI aggregates (not paginated)
-  const [totalOrders, totalUnitsAgg, amountAgg] = await Promise.all([
+  const q        = params.q        ?? "";
+  const dateFrom = params.dateFrom ?? "";
+  const dateTo   = params.dateTo   ?? "";
+  const gramasi  = params.gramasi  ?? "";
+  const rawPage  = parseInt(params.page ?? "1", 10);
+
+  const hasFilter = !!(q || dateFrom || dateTo || gramasi);
+
+  // Build where clause
+  const where: Prisma.PurchaseOrderWhereInput = {};
+
+  if (q) {
+    where.OR = [
+      { invoiceNo: { contains: q, mode: "insensitive" } },
+      { supplier: { name: { contains: q, mode: "insensitive" } } },
+      { lines: { some: { stockUnit: { serialNumber: { contains: q, mode: "insensitive" } } } } },
+    ];
+  }
+  if (dateFrom || dateTo) {
+    where.purchasedAt = {};
+    if (dateFrom) (where.purchasedAt as Prisma.DateTimeFilter).gte = new Date(dateFrom);
+    if (dateTo) {
+      const end = new Date(dateTo);
+      end.setDate(end.getDate() + 1);
+      (where.purchasedAt as Prisma.DateTimeFilter).lt = end;
+    }
+  }
+  if (gramasi) {
+    const wg = parseFloat(gramasi);
+    if (!isNaN(wg)) {
+      where.lines = { some: { stockUnit: { product: { weightGram: wg } } } };
+    }
+  }
+
+  // Parallel fetches
+  const [totalOrders, totalUnitsAgg, amountAgg, filteredCount, gramOptions] = await Promise.all([
     prisma.purchaseOrder.count(),
     prisma.purchaseOrderLine.count(),
     prisma.purchaseOrder.aggregate({ _sum: { totalAmount: true } }),
+    hasFilter ? prisma.purchaseOrder.count({ where }) : Promise.resolve(null as number | null),
+    prisma.product.findMany({
+      distinct: ["weightGram"],
+      select: { weightGram: true },
+      orderBy: { weightGram: "asc" },
+      where: { stockUnits: { some: { purchaseOrderLine: { isNot: null } } } },
+    }),
   ]);
-  const totalAmount = amountAgg._sum.totalAmount?.toNumber() ?? 0;
 
-  const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
-  const page       = Math.min(Math.max(1, isNaN(rawPage) ? 1 : rawPage), totalPages);
-  const skip       = (page - 1) * PAGE_SIZE;
+  const totalAmount  = amountAgg._sum.totalAmount?.toNumber() ?? 0;
+  const displayCount = hasFilter ? (filteredCount ?? 0) : totalOrders;
+  const totalPages   = Math.max(1, Math.ceil(displayCount / PAGE_SIZE));
+  const page         = Math.min(Math.max(1, isNaN(rawPage) ? 1 : rawPage), totalPages);
+  const skip         = (page - 1) * PAGE_SIZE;
 
   const orders = await prisma.purchaseOrder.findMany({
+    where,
     include: {
       supplier: { select: { name: true } },
       lines: {
@@ -52,6 +104,7 @@ export default async function PurchasesPage({
             include: {
               product: { select: { brand: true, weightGram: true, series: true } },
               owner:   { select: { name: true } },
+              swapEventsReplacement: { select: { id: true }, take: 1 },
             },
           },
         },
@@ -61,6 +114,14 @@ export default async function PurchasesPage({
     skip,
     take: PAGE_SIZE,
   });
+
+  const gramOptionsArr = gramOptions.map((p) => p.weightGram.toNumber());
+
+  const extraParams: Record<string, string> = {};
+  if (q)        extraParams.q        = q;
+  if (dateFrom) extraParams.dateFrom = dateFrom;
+  if (dateTo)   extraParams.dateTo   = dateTo;
+  if (gramasi)  extraParams.gramasi  = gramasi;
 
   return (
     <div>
@@ -74,12 +135,12 @@ export default async function PurchasesPage({
         </p>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — all-time totals */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
         {[
-          { label: "Total Order",     value: totalOrders.toString(),     sub: "purchase order" },
-          { label: "Total Unit",      value: totalUnitsAgg.toString(),   sub: "unit emas"      },
-          { label: "Total Pembelian", value: fmt(totalAmount),           sub: "nilai beli"     },
+          { label: "Total Order",     value: totalOrders.toString(),   sub: "purchase order" },
+          { label: "Total Unit",      value: totalUnitsAgg.toString(), sub: "unit emas"      },
+          { label: "Total Pembelian", value: fmt(totalAmount),         sub: "nilai beli"     },
         ].map(({ label, value, sub }) => (
           <div key={label} style={{
             background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.06)",
@@ -101,16 +162,26 @@ export default async function PurchasesPage({
         background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.06)",
         borderRadius: 16, padding: 24,
       }}>
+        {/* Filters */}
+        <Suspense fallback={null}>
+          <PurchasesFilters gramOptions={gramOptionsArr} />
+        </Suspense>
+
         {orders.length === 0 ? (
           <div style={{ padding: "48px 20px", textAlign: "center" }}>
             <p style={{ fontSize: 32, marginBottom: 12 }}>◈</p>
-            <p style={{ fontSize: 15, color: "#5A5045" }}>Belum ada pembelian tercatat</p>
+            <p style={{ fontSize: 15, color: "#5A5045" }}>
+              {hasFilter ? "Tidak ada order yang cocok dengan filter" : "Belum ada pembelian tercatat"}
+            </p>
           </div>
         ) : (
           <>
             {/* Row count info */}
             <div style={{ fontSize: 12, color: "#5A5045", marginBottom: 16 }}>
-              Menampilkan {skip + 1}–{Math.min(skip + orders.length, totalOrders)} dari {totalOrders} order
+              {hasFilter
+                ? `Menampilkan ${skip + 1}–${Math.min(skip + orders.length, displayCount)} dari ${displayCount} order (total: ${totalOrders})`
+                : `Menampilkan ${skip + 1}–${Math.min(skip + orders.length, totalOrders)} dari ${totalOrders} order`
+              }
             </div>
 
             <div style={{ overflowX: "auto" }}>
@@ -143,44 +214,64 @@ export default async function PurchasesPage({
                           <span style={{ color: "#3A342A", fontFamily: "monospace", fontSize: 11 }}>—</span>
                         )}
                       </td>
+
                       <td style={tdStyle}>
                         <div style={{ color: "#EDE8DE" }}>{fmtDate(order.purchasedAt)}</div>
                         <div style={{ fontSize: 11, color: "#3A342A", marginTop: 2, fontFamily: "monospace" }}>
                           {order.id.slice(-8)}
                         </div>
                       </td>
+
                       <td style={{ ...tdStyle, color: "var(--gold)", fontWeight: 500 }}>
                         {order.supplier.name}
                       </td>
+
                       <td style={tdStyle}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                           {order.lines.map((line) => {
-                            const p = line.stockUnit.product;
+                            const p      = line.stockUnit.product;
+                            const isSwap = line.stockUnit.swapEventsReplacement.length > 0;
+                            const badge  = isSwap ? modeBadge.swap : modeBadge.stok;
                             return (
                               <div key={line.id}>
-                                <div style={{ color: "#EDE8DE" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#EDE8DE" }}>
                                   {p.brand ?? "—"} {p.weightGram.toNumber()}gr
-                                  {p.series && <span style={{ color: "#5A5045" }}> ({p.series})</span>}
+                                  {p.series && <span style={{ color: "#5A5045" }}>({p.series})</span>}
+                                  <span style={{
+                                    padding: "1px 6px", borderRadius: 4,
+                                    fontSize: 10, fontWeight: 600, letterSpacing: 0.5,
+                                    color: badge.color, background: badge.bg,
+                                  }}>
+                                    {badge.label}
+                                  </span>
                                 </div>
-                                <div style={{ fontSize: 11, color: "#5A5045" }}>
-                                  {line.stockUnit.owner.name} · {line.stockUnit.serialNumber ?? "no serial"} · {fmt(line.unitPrice.toNumber())}
+                                <div style={{ fontSize: 11, color: "#5A5045", marginTop: 2 }}>
+                                  {line.stockUnit.owner.name}
+                                  {line.stockUnit.serialNumber
+                                    ? ` · ${line.stockUnit.serialNumber}`
+                                    : " · no serial"
+                                  }
+                                  {" · "}{fmt(line.unitPrice.toNumber())}
                                 </div>
                               </div>
                             );
                           })}
                         </div>
                       </td>
+
                       <td style={{ ...tdStyle, color: "#EDE8DE", fontWeight: 500 }}>
                         {fmt(order.totalAmount.toNumber())}
                         <div style={{ fontSize: 11, color: "#5A5045", fontWeight: 400, marginTop: 2 }}>
                           {order.lines.length} unit
                         </div>
                       </td>
+
                       <td style={tdStyle}>
                         {order.goldSpotPrice
                           ? fmt(order.goldSpotPrice.toNumber())
                           : <span style={{ color: "#3A342A" }}>—</span>}
                       </td>
+
                       <td style={{ ...tdStyle, maxWidth: 200, whiteSpace: "normal" }}>
                         {order.notes ?? <span style={{ color: "#3A342A" }}>—</span>}
                       </td>
@@ -190,7 +281,12 @@ export default async function PurchasesPage({
               </table>
             </div>
 
-            <Pagination page={page} totalPages={totalPages} basePath="/admin/purchases" />
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              basePath="/admin/purchases"
+              extraParams={Object.keys(extraParams).length > 0 ? extraParams : undefined}
+            />
           </>
         )}
       </div>

@@ -1,5 +1,8 @@
+import { Suspense } from "react";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import Pagination from "@/components/admin/Pagination";
+import SalesFilters from "./SalesFilters";
 
 export const dynamic = "force-dynamic";
 
@@ -32,26 +35,84 @@ const tdStyle: React.CSSProperties = {
 export default async function SalesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{
+    page?: string; q?: string; status?: string;
+    mode?: string; gramasi?: string; dateFrom?: string; dateTo?: string;
+  }>;
 }) {
-  const { page: pageParam } = await searchParams;
-  const rawPage = parseInt(pageParam ?? "1", 10);
+  const params = await searchParams;
 
-  // All-time KPI aggregates (not paginated)
-  const [totalTx, lineAgg] = await Promise.all([
+  const q        = params.q        ?? "";
+  const status   = params.status   ?? "";
+  const mode     = params.mode     ?? "";
+  const gramasi  = params.gramasi  ?? "";
+  const dateFrom = params.dateFrom ?? "";
+  const dateTo   = params.dateTo   ?? "";
+  const rawPage  = parseInt(params.page ?? "1", 10);
+
+  const hasFilter = !!(q || status || mode || gramasi || dateFrom || dateTo);
+
+  // Build dynamic where clause
+  const where: Prisma.TransactionWhereInput = {};
+
+  if (q) {
+    where.OR = [
+      { invoiceNo: { contains: q, mode: "insensitive" } },
+      { receiptNo: { contains: q, mode: "insensitive" } },
+      { buyer: { name: { contains: q, mode: "insensitive" } } },
+    ];
+  }
+  if (status === "paid" || status === "pending") {
+    where.status = status;
+  }
+  if (dateFrom || dateTo) {
+    where.transactedAt = {};
+    if (dateFrom) (where.transactedAt as Prisma.DateTimeFilter).gte = new Date(dateFrom);
+    if (dateTo) {
+      const end = new Date(dateTo);
+      end.setDate(end.getDate() + 1);
+      (where.transactedAt as Prisma.DateTimeFilter).lt = end;
+    }
+  }
+
+  const lineFilter: Prisma.TransactionLineWhereInput = {};
+  if (gramasi) {
+    const wg = parseFloat(gramasi);
+    if (!isNaN(wg)) {
+      lineFilter.OR = [
+        { stockUnit: { product: { weightGram: wg } } },
+        { swapEvent: { originalUnit: { product: { weightGram: wg } } } },
+      ];
+    }
+  }
+  if (mode) lineFilter.fulfillmentMode = mode;
+  if (Object.keys(lineFilter).length > 0) where.lines = { some: lineFilter };
+
+  // Parallel fetches
+  const [totalTxAll, lineAggAll, filteredCount, gramOptions] = await Promise.all([
     prisma.transaction.count(),
     prisma.transactionLine.aggregate({
       _sum: { sellPrice: true, margin: true },
     }),
+    hasFilter ? prisma.transaction.count({ where }) : Promise.resolve(null as number | null),
+    prisma.product.findMany({
+      distinct: ["weightGram"],
+      select: { weightGram: true },
+      orderBy: { weightGram: "asc" },
+      where: { stockUnits: { some: { transactionLines: { some: {} } } } },
+    }),
   ]);
-  const totalRevenue = lineAgg._sum.sellPrice?.toNumber() ?? 0;
-  const totalMargin  = lineAgg._sum.margin?.toNumber()   ?? 0;
 
-  const totalPages = Math.max(1, Math.ceil(totalTx / PAGE_SIZE));
-  const page       = Math.min(Math.max(1, isNaN(rawPage) ? 1 : rawPage), totalPages);
-  const skip       = (page - 1) * PAGE_SIZE;
+  const totalRevenue = lineAggAll._sum.sellPrice?.toNumber() ?? 0;
+  const totalMargin  = lineAggAll._sum.margin?.toNumber()   ?? 0;
+
+  const displayCount = hasFilter ? (filteredCount ?? 0) : totalTxAll;
+  const totalPages   = Math.max(1, Math.ceil(displayCount / PAGE_SIZE));
+  const page         = Math.min(Math.max(1, isNaN(rawPage) ? 1 : rawPage), totalPages);
+  const skip         = (page - 1) * PAGE_SIZE;
 
   const transactions = await prisma.transaction.findMany({
+    where,
     include: {
       buyer: { select: { name: true } },
       lines: {
@@ -80,6 +141,17 @@ export default async function SalesPage({
     take: PAGE_SIZE,
   });
 
+  const gramOptionsArr = gramOptions.map((p) => p.weightGram.toNumber());
+
+  // Params preserved across pagination
+  const extraParams: Record<string, string> = {};
+  if (q)        extraParams.q        = q;
+  if (status)   extraParams.status   = status;
+  if (mode)     extraParams.mode     = mode;
+  if (gramasi)  extraParams.gramasi  = gramasi;
+  if (dateFrom) extraParams.dateFrom = dateFrom;
+  if (dateTo)   extraParams.dateTo   = dateTo;
+
   return (
     <div>
       <p className="section-label" style={{ marginBottom: 8 }}>Transaksi</p>
@@ -92,12 +164,12 @@ export default async function SalesPage({
         </p>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — all-time totals */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
         {[
-          { label: "Total Transaksi", value: totalTx.toString(),   sub: "transaksi",          highlight: undefined },
-          { label: "Total Revenue",   value: fmt(totalRevenue),    sub: "total penjualan",    highlight: undefined },
-          { label: "Total Margin",    value: fmt(totalMargin),     sub: "keuntungan bersih",  highlight: totalMargin >= 0 },
+          { label: "Total Transaksi", value: totalTxAll.toString(),  sub: "semua transaksi",   highlight: undefined },
+          { label: "Total Revenue",   value: fmt(totalRevenue),      sub: "total penjualan",   highlight: undefined },
+          { label: "Total Margin",    value: fmt(totalMargin),       sub: "keuntungan bersih", highlight: totalMargin >= 0 },
         ].map(({ label, value, sub, highlight }) => (
           <div key={label} style={{
             background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.06)",
@@ -122,16 +194,26 @@ export default async function SalesPage({
         background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.06)",
         borderRadius: 16, padding: 24,
       }}>
-        {transactions.length === 0 && page === 1 ? (
+        {/* Filters */}
+        <Suspense fallback={null}>
+          <SalesFilters gramOptions={gramOptionsArr} />
+        </Suspense>
+
+        {transactions.length === 0 ? (
           <div style={{ padding: "48px 20px", textAlign: "center" }}>
             <p style={{ fontSize: 32, marginBottom: 12 }}>✦</p>
-            <p style={{ fontSize: 15, color: "#5A5045" }}>Belum ada penjualan tercatat</p>
+            <p style={{ fontSize: 15, color: "#5A5045" }}>
+              {hasFilter ? "Tidak ada transaksi yang cocok dengan filter" : "Belum ada penjualan tercatat"}
+            </p>
           </div>
         ) : (
           <>
             {/* Row count info */}
             <div style={{ fontSize: 12, color: "#5A5045", marginBottom: 16 }}>
-              Menampilkan {skip + 1}–{Math.min(skip + transactions.length, totalTx)} dari {totalTx} transaksi
+              {hasFilter
+                ? `Menampilkan ${skip + 1}–${Math.min(skip + transactions.length, displayCount)} dari ${displayCount} transaksi (total: ${totalTxAll})`
+                : `Menampilkan ${skip + 1}–${Math.min(skip + transactions.length, totalTxAll)} dari ${totalTxAll} transaksi`
+              }
             </div>
 
             <div style={{ overflowX: "auto" }}>
@@ -169,7 +251,6 @@ export default async function SalesPage({
                           ) : (
                             <span style={{ color: "#3A342A", fontFamily: "monospace", fontSize: 11 }}>—</span>
                           )}
-                          {/* Link kwitansi jika sudah lunas */}
                           {tx.status === "paid" && tx.receiptNo && (
                             <a
                               href={`/admin/invoices/receipts/${tx.id}`}
@@ -272,7 +353,12 @@ export default async function SalesPage({
               </table>
             </div>
 
-            <Pagination page={page} totalPages={totalPages} basePath="/admin/sales" />
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              basePath="/admin/sales"
+              extraParams={Object.keys(extraParams).length > 0 ? extraParams : undefined}
+            />
           </>
         )}
       </div>

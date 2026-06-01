@@ -135,18 +135,18 @@ async function main() {
     cogs:                number;
     margin:              number;
     buyerId:             string | null;
-    _buyerCreate:        boolean;
+    _buyerCreate:        boolean; // counterparty belum ada sama sekali → buat baru
+    _buyerAddRole:       boolean; // counterparty ada tapi belum punya role buyer → tambah role
   };
 
   const errors: string[]       = [];
   const processed: ProcessedRow[] = [];
 
-  // Pre-load counterparties untuk dedup
-  const existingBuyers = await prisma.counterparty.findMany({
-    where: { type: { has: "buyer" } },
-    select: { id: true, name: true },
+  // Pre-load SEMUA counterparty (bukan hanya buyer) untuk dedup & role-update
+  const allCounterparties = await prisma.counterparty.findMany({
+    select: { id: true, name: true, type: true },
   });
-  const buyerMap = new Map(existingBuyers.map(b => [b.name.toLowerCase(), b.id]));
+  const cpMap = new Map(allCounterparties.map(c => [c.name.toLowerCase(), c]));
 
   for (let i = 0; i < rows.length; i++) {
     const row   = rows[i];
@@ -211,8 +211,9 @@ async function main() {
         cogs = refPrice;
       }
 
-      const margin  = sellPrice - cogs;
-      const buyerId = buyerMap.get(buyerName.toLowerCase()) ?? null;
+      const margin   = sellPrice - cogs;
+      const cpEntry  = cpMap.get(buyerName.toLowerCase()) ?? null;
+      const buyerId  = cpEntry?.id ?? null;
 
       processed.push({
         serialNumber,
@@ -225,7 +226,8 @@ async function main() {
         cogs,
         margin,
         buyerId,
-        _buyerCreate: buyerId === null,
+        _buyerCreate:  cpEntry === null,
+        _buyerAddRole: cpEntry !== null && !cpEntry.type.includes("buyer"),
       });
 
     } catch (e) {
@@ -245,10 +247,19 @@ async function main() {
     console.log(`\n❌  ${errors.length} baris bermasalah:\n${errors.join("\n")}\n`);
   }
 
-  const newBuyers = [...new Set(processed.filter(r => r._buyerCreate).map(r => r.buyerName))];
+  const newBuyers   = [...new Set(processed.filter(r => r._buyerCreate).map(r => r.buyerName))];
+  const roleUpdates = [...new Set(processed.filter(r => r._buyerAddRole).map(r => r.buyerName))];
+
   if (newBuyers.length > 0) {
     console.log(`\n🆕  Buyer baru yang akan dibuat (${newBuyers.length}):`);
     newBuyers.forEach(n => console.log(`    + ${n}`));
+  }
+  if (roleUpdates.length > 0) {
+    console.log(`\n🔄  Counterparty yang akan ditambah role "buyer" (${roleUpdates.length}):`);
+    roleUpdates.forEach(n => {
+      const cp = cpMap.get(n.toLowerCase())!;
+      console.log(`    ~ ${n}  [${cp.type.join(", ")}] → [${[...cp.type, "buyer"].join(", ")}]`);
+    });
   }
 
   // Ringkasan per mode
@@ -324,12 +335,24 @@ async function main() {
   ]);
   console.log("    ✓  Data lama dihapus & status unit direset");
 
-  // 2. Buat buyer baru yang belum ada
+  // 2a. Tambahkan role "buyer" ke counterparty yang sudah ada tapi belum punya role buyer
+  if (roleUpdates.length > 0) {
+    console.log(`    🔄  Menambahkan role buyer ke ${roleUpdates.length} counterparty…`);
+    for (const name of roleUpdates) {
+      const cp = cpMap.get(name.toLowerCase())!;
+      const newType = [...new Set([...cp.type, "buyer"])];
+      await prisma.counterparty.update({ where: { id: cp.id }, data: { type: newType } });
+      cpMap.set(name.toLowerCase(), { ...cp, type: newType });
+      console.log(`    ✓ ${name}: [${cp.type.join(", ")}] → [${newType.join(", ")}]`);
+    }
+  }
+
+  // 2b. Buat buyer baru yang benar-benar belum ada
   if (newBuyers.length > 0) {
     console.log(`    🆕  Membuat ${newBuyers.length} buyer baru…`);
     for (const name of newBuyers) {
       const created = await prisma.counterparty.create({ data: { name, type: ["buyer"] } });
-      buyerMap.set(name.toLowerCase(), created.id);
+      cpMap.set(name.toLowerCase(), created);
     }
   }
 
@@ -338,7 +361,7 @@ async function main() {
   console.log(`    📥  Mengimport ${processed.length} transaksi…`);
   let count = 0;
   for (const row of processed) {
-    const buyerId = buyerMap.get(row.buyerName.toLowerCase()) ?? null;
+    const buyerId = cpMap.get(row.buyerName.toLowerCase())?.id ?? null;
 
     const createdTx = await prisma.transaction.create({
       data: { buyerId, transactedAt: row.transactedAt },

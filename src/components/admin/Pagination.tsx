@@ -1,13 +1,17 @@
 // Pure server component — no "use client" needed; all links are <a> tags
 
 type Props = {
-  page:       number;   // current page (1-indexed)
-  totalPages: number;
-  basePath:   string;   // e.g. "/admin/purchases"
+  page:        number;   // current page (1-indexed)
+  totalPages:  number;
+  basePath:    string;   // e.g. "/admin/purchases"
+  extraParams?: Record<string, string>; // preserved across page changes
 };
 
-function pageHref(basePath: string, p: number) {
-  return p === 1 ? basePath : `${basePath}?page=${p}`;
+function pageHref(basePath: string, p: number, extra: Record<string, string> = {}) {
+  const params = new URLSearchParams(extra);
+  if (p > 1) params.set("page", String(p));
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
 }
 
 /** Returns an array of page numbers and "..." strings to render. */
@@ -27,10 +31,11 @@ function buildPages(page: number, total: number): (number | "...")[] {
   return result;
 }
 
-export default function Pagination({ page, totalPages, basePath }: Props) {
+export default function Pagination({ page, totalPages, basePath, extraParams }: Props) {
   if (totalPages <= 1) return null;
 
   const pages = buildPages(page, totalPages);
+  const extra = extraParams ?? {};
 
   const btnBase: React.CSSProperties = {
     display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -48,7 +53,7 @@ export default function Pagination({ page, totalPages, basePath }: Props) {
     }}>
       {/* Prev */}
       {page > 1 ? (
-        <a href={pageHref(basePath, page - 1)} style={{
+        <a href={pageHref(basePath, page - 1, extra)} style={{
           ...btnBase,
           color: "var(--gold)", background: "rgba(201,168,76,.08)",
           border: "1px solid rgba(201,168,76,.25)",
@@ -69,7 +74,7 @@ export default function Pagination({ page, totalPages, basePath }: Props) {
               …
             </span>
           ) : (
-            <a key={p} href={pageHref(basePath, p)} style={{
+            <a key={p} href={pageHref(basePath, p, extra)} style={{
               ...btnBase,
               color:      p === page ? "#1A1612"        : "#7A6E5F",
               background: p === page ? "var(--gold)"    : "transparent",
@@ -84,7 +89,7 @@ export default function Pagination({ page, totalPages, basePath }: Props) {
 
       {/* Next */}
       {page < totalPages ? (
-        <a href={pageHref(basePath, page + 1)} style={{
+        <a href={pageHref(basePath, page + 1, extra)} style={{
           ...btnBase,
           color: "var(--gold)", background: "rgba(201,168,76,.08)",
           border: "1px solid rgba(201,168,76,.25)",
