@@ -82,6 +82,7 @@ const menuGroups: MenuGroup[] = [
         label: "Catat Transaksi",
         submenu: [
           { href: "/admin/transactions/new?tab=beli",       icon: ShoppingBag,    label: "Beli Stok"         },
+          { href: "/admin/transactions/new?tab=jual",       icon: Receipt,        label: "Jual Stok"         },
           { href: "/admin/transactions/new?tab=konsinyasi", icon: PackageCheck,   label: "Konsinyasi"        },
           { href: "/admin/transactions/new?tab=swap",       icon: ArrowRightLeft, label: "Swap"              },
           { href: "/admin/transactions/outstanding-swaps",  icon: AlertTriangle,  label: "Outstanding Swaps" },
@@ -128,10 +129,11 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
   return (
     <aside className={`adm-sidebar${open ? " open" : ""}`}>
       {/* Logo */}
-      <div style={{
+      <Link href="/" style={{
         padding: "24px 20px",
         borderBottom: "1px solid rgba(201,168,76,0.15)",
         display: "flex", alignItems: "center", gap: "10px",
+        textDecoration: "none",
       }}>
         <Image src="/Logo CG.png" alt="Clemira Gold" width={24} height={24} style={{ objectFit: "contain" }} />
         <div>
@@ -142,7 +144,7 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
             ADMIN PANEL
           </div>
         </div>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: "16px 0", overflowY: "auto" }}>

@@ -57,11 +57,27 @@ const S = {
 };
 
 // ─── Small Components ─────────────────────────────────────────────────────────
-function F({ label, addon, children }: { label: string; addon?: React.ReactNode; children: React.ReactNode }) {
+function F({ label, addon, tooltip, children }: { label: string; addon?: React.ReactNode; tooltip?: string; children: React.ReactNode }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-        <label style={{ ...S.lbl, marginBottom: 0 }}>{label}</label>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <label style={{ ...S.lbl, marginBottom: 0 }}>{label}</label>
+          {tooltip && (
+            <span
+              title={tooltip}
+              style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                width: 15, height: 15, borderRadius: "50%",
+                fontSize: 9, fontWeight: 700, letterSpacing: 0,
+                background: "rgba(255,255,255,.08)", color: "#5A5045",
+                cursor: "help", flexShrink: 0,
+              }}
+            >
+              ?
+            </span>
+          )}
+        </div>
         {addon}
       </div>
       {children}
@@ -351,6 +367,151 @@ function QuickAdd({ type, role, onCreated }: {
   );
 }
 
+// ─── QuickAddProduct ─────────────────────────────────────────────────────────
+function QuickAddProduct({ onCreated }: {
+  onCreated: (p: Product) => void;
+}) {
+  const [open,    setOpen]    = useState(false);
+  const [saving,  setSaving]  = useState(false);
+  const [err,     setErr]     = useState("");
+
+  // Create form state
+  const [cSku,    setCsku]    = useState("");
+  const [cName,   setCname]   = useState("");
+  const [cBrand,  setCbrand]  = useState("");
+  const [cGram,   setCgram]   = useState("");
+  const [cPurity, setCpurity] = useState("999.9");
+  const [cSeries, setCseries] = useState("");
+
+  function reset() {
+    setOpen(false); setErr(""); setSaving(false);
+    setCsku(""); setCname(""); setCbrand(""); setCgram(""); setCpurity("999.9"); setCseries("");
+  }
+
+  async function handleCreate() {
+    if (!cSku || !cName) { setErr("SKU dan nama wajib diisi"); return; }
+    const wg = parseFloat(cGram);
+    if (isNaN(wg) || wg <= 0) { setErr("Gramasi harus berupa angka positif"); return; }
+    setSaving(true); setErr("");
+    const res = await fetch("/api/stock/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sku:        cSku.trim(),
+        name:       cName.trim(),
+        brand:      cBrand.trim()  || null,
+        weightGram: wg,
+        purity:     cPurity.trim() || "999.9",
+        series:     cSeries.trim() || null,
+      }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      const p = await res.json();
+      onCreated(p);
+      reset();
+    } else {
+      const j = await res.json();
+      setErr(j.error ?? "Gagal menyimpan produk");
+    }
+  }
+
+  const overlay: React.CSSProperties = {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,.65)", zIndex: 1000,
+    display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+  };
+  const modalCard: React.CSSProperties = {
+    background: "#1E1A14", border: "1px solid rgba(255,255,255,.1)",
+    borderRadius: 16, padding: 28, width: "100%", maxWidth: 500,
+    maxHeight: "90vh", overflowY: "auto",
+  };
+  const btnBase: React.CSSProperties = {
+    height: 38, padding: "0 20px", fontSize: 14, borderRadius: 8,
+    cursor: "pointer", fontFamily: "var(--font-dm-sans), sans-serif",
+  };
+  const miniInp: React.CSSProperties = {
+    ...S.inp, height: 36, fontSize: 13,
+  };
+
+  if (!open) return (
+    <button type="button" onClick={() => setOpen(true)}
+      style={{ fontSize: 13, color: "var(--gold)", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-dm-sans), sans-serif" }}>
+      + Baru
+    </button>
+  );
+
+  return (
+    <div style={overlay} onMouseDown={e => { if (e.target === e.currentTarget) reset(); }}>
+      <div style={modalCard}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 className="fd" style={{ margin: 0, fontSize: "1.15rem", fontWeight: 400, color: "var(--text)" }}>
+            Produk Baru
+          </h3>
+          <button type="button" onClick={reset}
+            style={{ background: "none", border: "none", color: "#5A5045", fontSize: 24, cursor: "pointer", lineHeight: 1, padding: 0 }}>
+            ×
+          </button>
+        </div>
+
+        {/* Create form */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 12 }}>
+              <div>
+                <label style={S.lbl}>SKU *</label>
+                <input autoFocus value={cSku} onChange={e => setCsku(e.target.value)} placeholder="LM-ANTAM-1GR" style={miniInp} />
+              </div>
+              <div>
+                <label style={S.lbl}>Nama *</label>
+                <input value={cName} onChange={e => setCname(e.target.value)} placeholder="LM Antam 1gr Regular" style={miniInp} />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={S.lbl}>Brand</label>
+                <input value={cBrand} onChange={e => setCbrand(e.target.value)} placeholder="antam" list="qap-brand" style={miniInp} />
+                <datalist id="qap-brand"><option value="antam"/><option value="ubs"/><option value="galeri24"/></datalist>
+              </div>
+              <div>
+                <label style={S.lbl}>Gramasi (gr) *</label>
+                <input type="number" step="0.001" min="0.001" value={cGram} onChange={e => setCgram(e.target.value)} placeholder="1" list="qap-gram" style={miniInp} />
+                <datalist id="qap-gram">
+                  {[0.5,1,2,3,5,10,25,50,100].map(g => <option key={g} value={g}/>)}
+                </datalist>
+              </div>
+              <div>
+                <label style={S.lbl}>Purity</label>
+                <input value={cPurity} onChange={e => setCpurity(e.target.value)} placeholder="999.9" style={miniInp} />
+              </div>
+            </div>
+            <div>
+              <label style={S.lbl}>Series</label>
+              <input value={cSeries} onChange={e => setCseries(e.target.value)} placeholder="regular" list="qap-series" style={miniInp} />
+              <datalist id="qap-series"><option value="regular"/><option value="gift"/><option value="batik"/></datalist>
+            </div>
+
+            {err && (
+              <div style={{ fontSize: 13, color: "#EF5350", background: "rgba(239,83,80,.08)", border: "1px solid rgba(239,83,80,.2)", borderRadius: 6, padding: "10px 14px" }}>
+                {err}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+              <button type="button" onClick={handleCreate} disabled={saving}
+                style={{ ...btnBase, border: "1px solid rgba(201,168,76,.4)", background: "rgba(201,168,76,.12)", color: "var(--gold)", opacity: saving ? 0.6 : 1 }}>
+                {saving ? "Menyimpan…" : "Simpan Produk"}
+              </button>
+              <button type="button" onClick={reset}
+                style={{ ...btnBase, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "#7A6E5F" }}>
+                Batal
+              </button>
+            </div>
+          </div>
+      </div>
+    </div>
+  );
+}
+
 function Inp({ value, onChange, placeholder, type = "text" }: {
   value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
 }) {
@@ -424,13 +585,13 @@ function MarginPreview({ sell, cogs }: { sell: string; cogs: string }) {
 export default function TransactionForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [tab, setTab] = useState<"beli" | "konsinyasi" | "swap">(
-    (params.get("tab") ?? "beli") as "beli" | "konsinyasi" | "swap"
+  const [tab, setTab] = useState<"beli" | "jual" | "konsinyasi" | "swap">(
+    (params.get("tab") ?? "beli") as "beli" | "jual" | "konsinyasi" | "swap"
   );
 
   useEffect(() => {
     const t = params.get("tab");
-    if (t === "beli" || t === "konsinyasi" || t === "swap") setTab(t);
+    if (t === "beli" || t === "jual" || t === "konsinyasi" || t === "swap") setTab(t);
   }, [params]);
 
   const [owners,      setOwners]      = useState<Owner[]>([]);
@@ -503,6 +664,7 @@ export default function TransactionForm() {
   // ── Konsinyasi ─────────────────────────────────────────────────────────────
   const [kBuyer,   setKBuyer]   = useState("");
   const [kSupp,    setKSupp]    = useState("");
+  const [kProduct, setKProduct] = useState("");
   const [kDate,    setKDate]    = useState(TODAY);
   const [kNotes,   setKNotes]   = useState("");
   const [kSerial,  setKSerial]  = useState("");
@@ -516,8 +678,11 @@ export default function TransactionForm() {
   async function submitKonsinyasi(e: { preventDefault(): void }) {
     e.preventDefault();
     setKError("");
-    if (!kSupp)          { setKError("Supplier konsinyasi wajib dipilih"); return; }
-    if (!kCogs || !kSell){ setKError("Harga beli dan harga jual wajib diisi"); return; }
+    if (!kSupp)           { setKError("Supplier konsinyasi wajib dipilih"); return; }
+    if (!kProduct)        { setKError("Produk wajib dipilih"); return; }
+    if (!kSerial.trim())  { setKError("Nomor serial wajib diisi"); return; }
+    if (!kCert.trim())    { setKError("Cert code wajib diisi"); return; }
+    if (!kCogs || !kSell) { setKError("Harga beli dan harga jual wajib diisi"); return; }
     setKLoading(true);
     const res = await fetch("/api/sales/transactions", {
       method: "POST",
@@ -531,6 +696,7 @@ export default function TransactionForm() {
           sellPrice: parseFloat(kSell),
           consignment: {
             supplierId:            kSupp,
+            productId:             kProduct  || undefined,
             serialNumber:          kSerial   || undefined,
             certCode:              kCert     || undefined,
             mintYear:              kYear     ? parseInt(kYear) : undefined,
@@ -568,6 +734,66 @@ export default function TransactionForm() {
   const [swRepYear,      setSwRepYear]      = useState("");
   const [swRepCondition, setSwRepCondition] = useState<"new"|"used">("new");
   const [swRepPrice,     setSwRepPrice]     = useState("");
+
+  // ── Jual Stok ──────────────────────────────────────────────────────────────
+  const [jBuyer,   setJBuyer]   = useState("");
+  const [jDate,    setJDate]    = useState(TODAY);
+  const [jNotes,   setJNotes]   = useState("");
+  const [jSearch,  setJSearch]  = useState("");
+  const [jLines,   setJLines]   = useState<{ unitId: string; sell: string }[]>([]);
+  const [jLoading, setJLoading] = useState(false);
+  const [jError,   setJError]   = useState("");
+
+  const jSelectedIds = new Set(jLines.map(l => l.unitId));
+  const jFiltered = avail.filter(u => {
+    if (jSelectedIds.has(u.id)) return false;
+    if (!jSearch.trim()) return true;
+    const q = jSearch.toLowerCase();
+    return (
+      u.serialNumber?.toLowerCase().includes(q) ||
+      u.product.brand?.toLowerCase().includes(q) ||
+      u.certCode?.toLowerCase().includes(q) ||
+      String(u.product.weightGram).includes(q) ||
+      u.owner?.name.toLowerCase().includes(q)
+    );
+  });
+
+  function jAddUnit(unitId: string) {
+    setJLines(prev => prev.find(l => l.unitId === unitId) ? prev : [...prev, { unitId, sell: "" }]);
+    setJSearch("");
+  }
+  function jRemoveUnit(unitId: string) { setJLines(prev => prev.filter(l => l.unitId !== unitId)); }
+  function jSetSell(unitId: string, sell: string) {
+    setJLines(prev => prev.map(l => l.unitId === unitId ? { ...l, sell } : l));
+  }
+
+  async function submitJual(e: { preventDefault(): void }) {
+    e.preventDefault();
+    setJError("");
+    if (jLines.length === 0) { setJError("Pilih minimal satu unit untuk dijual"); return; }
+    if (jLines.some(l => !l.sell || isNaN(parseFloat(l.sell)))) {
+      setJError("Harga jual semua unit wajib diisi"); return;
+    }
+    setJLoading(true);
+    const res = await fetch("/api/sales/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        buyerId:      jBuyer || undefined,
+        transactedAt: jDate,
+        notes:        jNotes || undefined,
+        lines: jLines.map(l => ({
+          fulfillmentMode: "own_stock",
+          stockUnitId:     l.unitId,
+          sellPrice:       parseFloat(l.sell),
+        })),
+      }),
+    });
+    setJLoading(false);
+    if (res.ok) { router.push("/admin/sales"); return; }
+    const j = await res.json();
+    setJError(j.error ?? "Gagal menyimpan");
+  }
 
   const swUnit = avail.find(u => u.id === swUnitId);
   const swFiltered = swSearch
@@ -697,6 +923,7 @@ export default function TransactionForm() {
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 28 }}>
         <button style={tabStyle(tab === "beli")}       onClick={() => setTab("beli")}>Beli Stok</button>
+        <button style={tabStyle(tab === "jual")}       onClick={() => setTab("jual")}>Jual Stok</button>
         <button style={tabStyle(tab === "konsinyasi")} onClick={() => setTab("konsinyasi")}>Konsinyasi</button>
         <button style={tabStyle(tab === "swap")}       onClick={() => setTab("swap")}>Swap</button>
       </div>
@@ -740,7 +967,10 @@ export default function TransactionForm() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {/* Swap event linkage */}
-                <F label="Unit Pengganti Swap (opsional)">
+                <F
+                  label="Unit Pengganti Swap (opsional)"
+                  tooltip="Isi ini hanya jika unit yang dibeli adalah pengganti dari transaksi swap yang sudah tercatat sebelumnya (outstanding swap). Memilih swap event di sini akan menghubungkan unit baru ke transaksi swap tersebut dan mewarisi referencePrice dari unit asal secara otomatis. Biarkan kosong jika ini pembelian stok biasa."
+                >
                   <Sel value={u.swapEventId} onChange={v => updateUnit(u._key, { swapEventId: v })}>
                     <option value="">— Bukan pengganti swap —</option>
                     {openSwaps.map(e => <option key={e.id} value={e.id}>{swapEventLabel(e)}</option>)}
@@ -758,7 +988,14 @@ export default function TransactionForm() {
                   );
                 })()}
                 <Grid cols={2}>
-                  <F label="Produk *">
+                  <F label="Produk *" addon={
+                    <QuickAddProduct
+                      onCreated={(p) => {
+                        setProducts(prev => prev.find(x => x.id === p.id) ? prev : [...prev, p]);
+                        updateUnit(u._key, { productId: p.id });
+                      }}
+                    />
+                  }>
                     <Sel value={u.productId} onChange={v => updateUnit(u._key, { productId: v })}>
                       <option value="">— Pilih produk —</option>
                       {products.map(p => <option key={p.id} value={p.id}>{prodLabel(p)}</option>)}
@@ -820,6 +1057,115 @@ export default function TransactionForm() {
         </form>
       )}
 
+      {/* ── TAB: JUAL STOK ────────────────────────────────────────────────── */}
+      {tab === "jual" && (
+        <form onSubmit={submitJual} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={S.card}>
+            <p style={{ fontSize: 12, color: "#5A5045", marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Info Transaksi</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <Grid cols={2}>
+                <F label="Pembeli" addon={<QuickAdd type="counterparty" role="buyer" onCreated={(id, name) => { setBuyers(b => b.find(x => x.id === id) ? b : [...b, { id, name }]); setJBuyer(id); }} />}>
+                  <Sel value={jBuyer} onChange={setJBuyer}>
+                    <option value="">— Tanpa pembeli —</option>
+                    {buyers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </Sel>
+                </F>
+                <F label="Tanggal *">
+                  <Inp type="date" value={jDate} onChange={setJDate} />
+                </F>
+              </Grid>
+              <F label="Catatan">
+                <Inp value={jNotes} onChange={setJNotes} placeholder="Opsional…" />
+              </F>
+            </div>
+          </div>
+
+          <div style={S.card}>
+            <p style={{ fontSize: 12, color: "#5A5045", marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Unit yang Dijual</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* Search & pick */}
+              <F label="Cari & Tambah Unit">
+                <Inp value={jSearch} onChange={setJSearch} placeholder="Cari serial, brand, gramasi, pemilik…" />
+              </F>
+              {jSearch.trim() && (
+                <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, overflow: "hidden", marginTop: -4 }}>
+                  {jFiltered.length === 0 ? (
+                    <div style={{ padding: "12px 16px", fontSize: 13, color: "#5A5045" }}>Tidak ditemukan</div>
+                  ) : jFiltered.slice(0, 8).map((u, i) => (
+                    <div key={u.id}
+                      onMouseDown={e => { e.preventDefault(); jAddUnit(u.id); }}
+                      style={{
+                        padding: "11px 16px", cursor: "pointer",
+                        borderBottom: i < Math.min(jFiltered.length, 8) - 1 ? "1px solid rgba(255,255,255,.05)" : undefined,
+                        background: "rgba(255,255,255,.02)",
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,.07)")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,.02)")}
+                    >
+                      <div style={{ fontSize: 13, color: "#EDE8DE" }}>{unitLabel(u)}</div>
+                      {u.referencePrice != null && (
+                        <div style={{ fontSize: 12, color: "#5A5045", marginTop: 2 }}>Ref: {fmt(u.referencePrice)}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Selected lines */}
+              {jLines.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                  {jLines.map(line => {
+                    const u = avail.find(x => x.id === line.unitId);
+                    if (!u) return null;
+                    return (
+                      <div key={line.unitId} style={{
+                        display: "grid", gridTemplateColumns: "1fr auto auto", gap: 10, alignItems: "center",
+                        background: "rgba(201,168,76,.04)", border: "1px solid rgba(201,168,76,.12)",
+                        borderRadius: 8, padding: "10px 14px",
+                      }}>
+                        <div>
+                          <div style={{ fontSize: 13, color: "#EDE8DE" }}>{unitLabel(u)}</div>
+                          {u.referencePrice != null && (
+                            <div style={{ fontSize: 11, color: "#5A5045", marginTop: 2 }}>Ref: {fmt(u.referencePrice)}</div>
+                          )}
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="Harga jual (Rp)"
+                          value={line.sell}
+                          onChange={e => jSetSell(line.unitId, e.target.value)}
+                          style={{ ...S.inp, width: 160, height: 34, fontSize: 13 }}
+                        />
+                        <button type="button" onClick={() => jRemoveUnit(line.unitId)}
+                          style={{ background: "none", border: "none", color: "#5A5045", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "0 4px" }}>
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {/* Total */}
+                  {jLines.length > 1 && (
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, fontSize: 13, color: "#5A5045", paddingRight: 4 }}>
+                      Total: <b style={{ color: "var(--gold)" }}>{fmt(jLines.reduce((s, l) => s + (parseFloat(l.sell) || 0), 0))}</b>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {jLines.length === 0 && !jSearch.trim() && (
+                <div style={{ fontSize: 13, color: "#3A342A", padding: "8px 0" }}>
+                  Ketik di kolom pencarian untuk memilih unit yang akan dijual.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <ErrMsg msg={jError} />
+          <div><SaveBtn loading={jLoading} /></div>
+        </form>
+      )}
+
       {/* ── TAB: KONSINYASI ───────────────────────────────────────────────── */}
       {tab === "konsinyasi" && (
         <form onSubmit={submitKonsinyasi} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -854,12 +1200,25 @@ export default function TransactionForm() {
           <div style={S.card}>
             <p style={{ fontSize: 12, color: "#5A5045", marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Detail Unit</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <F label="Produk *" addon={
+                <QuickAddProduct
+                  onCreated={(p) => {
+                    setProducts(prev => prev.find(x => x.id === p.id) ? prev : [...prev, p]);
+                    setKProduct(p.id);
+                  }}
+                />
+              }>
+                <Sel value={kProduct} onChange={setKProduct}>
+                  <option value="">— Pilih produk —</option>
+                  {products.map(p => <option key={p.id} value={p.id}>{prodLabel(p)}</option>)}
+                </Sel>
+              </F>
               <Grid cols={3}>
-                <F label="No. Serial">
-                  <Inp value={kSerial} onChange={setKSerial} placeholder="Opsional" />
+                <F label="No. Serial *">
+                  <Inp value={kSerial} onChange={setKSerial} placeholder="cth. AG123456" />
                 </F>
-                <F label="Cert Code">
-                  <Inp value={kCert} onChange={setKCert} placeholder="Opsional" />
+                <F label="Cert Code *">
+                  <Inp value={kCert} onChange={setKCert} placeholder="cth. C12345" />
                 </F>
                 <F label="Tahun Cetak">
                   <Inp type="number" value={kYear} onChange={setKYear} placeholder="cth. 2024" />
@@ -869,7 +1228,7 @@ export default function TransactionForm() {
                 <F label="Harga Beli dari Supplier (Rp) *">
                   <Inp type="number" value={kCogs} onChange={setKCogs} placeholder="0" />
                 </F>
-                <F label="Harga Jual ke Pembeli (Rp) *">
+                <F label="Harga Jual (Rp) *">
                   <Inp type="number" value={kSell} onChange={setKSell} placeholder="0" />
                 </F>
               </Grid>

@@ -4,6 +4,7 @@ import { generateInvoiceNo } from "@/lib/invoice";
 
 interface ConsignmentInput {
   supplierId: string;
+  productId?: string;
   serialNumber?: string;
   certCode?: string;
   mintYear?: number;
@@ -158,6 +159,7 @@ export async function POST(req: NextRequest) {
             data: {
               transactionLineId:      txLine.id,
               supplierId:             c.supplierId,
+              productId:              c.productId,
               serialNumber:           c.serialNumber,
               certCode:               c.certCode,
               mintYear:               c.mintYear,

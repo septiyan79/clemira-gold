@@ -93,7 +93,8 @@ model Product {
   series     String?  @db.VarChar(50) // 'regular' | 'gift' | 'batik' | etc
   createdAt  DateTime @default(now())
 
-  stockUnits StockUnit[]
+  stockUnits        StockUnit[]
+  consignmentLines  ConsignmentLine[]
 }
 
 model Counterparty {
@@ -198,6 +199,7 @@ model ConsignmentLine {
   id                    String   @id @default(cuid())
   transactionLineId     String   @unique
   supplierId            String
+  productId             String?
   serialNumber          String?  @db.VarChar(100)
   certCode              String?  @db.VarChar(100)
   mintYear              Int?     @db.SmallInt
@@ -208,6 +210,7 @@ model ConsignmentLine {
 
   transactionLine TransactionLine @relation(fields: [transactionLineId], references: [id])
   supplier        Counterparty    @relation(fields: [supplierId], references: [id])
+  product         Product?        @relation(fields: [productId], references: [id])
 }
 
 model SwapEvent {
