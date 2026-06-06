@@ -124,7 +124,10 @@ export default async function SalesPage({
             },
           },
           consignmentLine: {
-            include: { supplier: { select: { name: true } } },
+            include: {
+              supplier: { select: { name: true } },
+              product: { select: { brand: true, weightGram: true, series: true } },
+            },
           },
           swapEvent: {
             include: {
@@ -288,16 +291,15 @@ export default async function SalesPage({
                               const su = line.stockUnit;
                               const cl = line.consignmentLine;
                               const se = line.swapEvent;
-                              const p  = su?.product ?? se?.originalUnit.product;
+                              const p  = su?.product ?? cl?.product ?? se?.originalUnit.product;
                               return (
                                 <div key={line.id}>
                                   <div style={{ color: "#EDE8DE" }}>
                                     {p ? `${p.brand ?? "—"} ${p.weightGram.toNumber()}gr` : "—"}
                                   </div>
                                   <div style={{ fontSize: 11, color: "#5A5045" }}>
-                                    {su?.owner?.name ?? "—"}
-                                    {su?.serialNumber ? ` · ${su.serialNumber}` : ""}
-                                    {cl ? ` · supplier: ${cl.supplier.name}` : ""}
+                                    {line.fulfillmentMode === "consignment" ? "CG" : (su?.owner?.name ?? "—")}
+                                    {(su?.serialNumber ?? cl?.serialNumber) ? ` · ${su?.serialNumber ?? cl?.serialNumber}` : ""}
                                     {se?.replacementUnitId === null ? " · ⚠ pengganti belum dicatat" : ""}
                                   </div>
                                 </div>

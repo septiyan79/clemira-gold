@@ -40,7 +40,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
         lines: {
           include: {
             stockUnit: { include: { product: true, owner: true } },
-            consignmentLine: { include: { supplier: true } },
+            consignmentLine: { include: { supplier: true, product: true } },
             swapEvent: { include: { originalUnit: { include: { product: true } } } },
           },
         },
@@ -64,7 +64,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
         .receipt-page-bg {
           background: #1A1612;
           min-height: 100%;
-          padding: 32px 16px;
+          padding: 24px 16px;
         }
         .receipt-wrap {
           background: #fff;
@@ -78,6 +78,43 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           print-color-adjust: exact;
           -webkit-print-color-adjust: exact;
         }
+        .rcpt-toolbar {
+          width: min(794px, 100%);
+          margin: 0 auto 16px;
+          background: rgba(26,22,18,0.92);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 10px;
+          padding: 6px 10px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 4px;
+          flex-wrap: wrap;
+          position: sticky;
+          top: 16px;
+          z-index: 100;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+        .rcpt-party-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 18px;
+        }
+        .rcpt-sig-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          margin-top: 24px;
+          align-items: flex-end;
+        }
+        .rcpt-table-scroll {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          margin-bottom: 14px;
+        }
+        .rcpt-table-scroll table { min-width: 360px; margin-bottom: 0; }
         .rcpt-table th, .rcpt-table td { border: 1px solid #e8e0d0; }
         .capitalize-words { text-transform: capitalize; }
         .lunas-stamp {
@@ -85,17 +122,45 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%) rotate(-20deg);
-          border: 4px solid rgba(34,139,34,0.12);
-          border-radius: 8px;
-          padding: 8px 20px;
-          font-size: 48px;
+          border: 3px solid rgba(34,139,34,0.12);
+          border-radius: 6px;
+          padding: 6px 14px;
+          font-size: 36px;
           font-weight: 900;
           color: rgba(34,139,34,0.09);
-          letter-spacing: 6px;
+          letter-spacing: 5px;
           pointer-events: none;
           white-space: nowrap;
         }
+        .receipt-area-wrapper { /* default: no special behavior */ }
+        @media screen and (max-width: 600px) {
+          .receipt-page-bg { padding: 0; }
+          .rcpt-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            background: #1A1612;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 12px;
+          }
+          .receipt-area-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px 16px 32px;
+          }
+          .rcpt-party-grid { grid-template-columns: 1fr; gap: 8px; margin-bottom: 12px; }
+          .rcpt-sig-grid { grid-template-columns: 1fr; gap: 10px; }
+          .inv-btn-label { display: none; }
+        }
         @media print {
+          @page { size: A5 portrait; margin: 0; }
           .no-print { display: none !important; }
           .adm-sidebar { display: none !important; }
           .adm-body { margin-left: 0 !important; }
@@ -104,18 +169,28 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           .adm-main { padding: 0 !important; overflow: visible !important; }
           body { background: #fff !important; }
           .receipt-page-bg { background: #fff !important; padding: 0 !important; }
-          .receipt-wrap { box-shadow: none !important; padding: 24px !important; width: 100% !important; min-height: auto !important; }
+          .receipt-wrap {
+            zoom: 0.705 !important;
+            width: 794px !important;
+            box-shadow: none !important;
+            min-height: auto !important;
+            padding: 48px 52px !important;
+          }
+          .receipt-area-wrapper { overflow: visible !important; padding: 0 !important; }
+          .rcpt-table-scroll { overflow: visible !important; }
+          .rcpt-table-scroll table { min-width: unset !important; }
           * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
         }
       `}</style>
 
       <div className="receipt-page-bg">
         {/* Tombol aksi */}
-        <div className="no-print" style={{ maxWidth: 794, margin: "0 auto", paddingBottom: 16, display: "flex", justifyContent: "flex-end", gap: 10 }}>
+        <div className="no-print rcpt-toolbar">
           <ShareWhatsAppButton invoiceNo={tx.receiptNo ?? ""} />
           <PrintButton label="Cetak Kwitansi" />
         </div>
 
+        <div className="receipt-area-wrapper">
         <div id="invoice-content" className="receipt-wrap" style={{ fontFamily: "'Segoe UI', sans-serif", color: "#333", position: "relative" }}>
 
           {/* Watermark LUNAS */}
@@ -165,7 +240,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* ── Penjual / Pembeli ── */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
+          <div className="rcpt-party-grid">
             <div style={{ padding: "14px 18px", background: "#fafaf8", borderRadius: 8, border: "1px solid #ede5d5" }}>
               <div style={{ fontSize: 10, letterSpacing: 1.8, color: "#C9A84C", textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>Penjual</div>
               <div style={{ fontWeight: 700, fontSize: 14, color: "#222" }}>Clemira Gold</div>
@@ -187,7 +262,8 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* ── Tabel Item ── */}
-          <table className="rcpt-table" style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20, fontSize: 13 }}>
+          <div className="rcpt-table-scroll">
+          <table className="rcpt-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ background: "#C9A84C" }}>
                 {["#", "Brand", "Series", "Gramasi", "Serial / Certcode", "Harga Jual"].map((h, i) => (
@@ -202,7 +278,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
                 const unit = line.stockUnit;
                 const cons = line.consignmentLine;
                 const swap = line.swapEvent;
-                const product = unit?.product ?? swap?.originalUnit.product;
+                const product = unit?.product ?? cons?.product ?? swap?.originalUnit.product;
                 const serial = unit?.serialNumber ?? cons?.serialNumber ?? swap?.originalUnit.serialNumber ?? "—";
                 const cert = unit?.certCode ?? cons?.certCode ?? swap?.originalUnit.certCode ?? null;
 
@@ -230,6 +306,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
               </tr>
             </tfoot>
           </table>
+          </div>
 
           {/* ── Keterangan Pembayaran ── */}
           <div style={{ padding: "16px 18px", background: "#f0f8f0", border: "1px solid #a5d6a7", borderRadius: 8, marginBottom: 24, fontSize: 13, lineHeight: 1.7, color: "#555" }}>
@@ -252,7 +329,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           )}
 
           {/* ── Tanda Tangan & QR ── */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 40, alignItems: "flex-end" }}>
+          <div className="rcpt-sig-grid">
             <div style={{ textAlign: "center" }}>
               <div style={{ height: 64, borderBottom: "1px solid #ccc", marginBottom: 8 }} />
               <div style={{ fontSize: 12, color: "#888" }}>Penerima Pembayaran</div>
@@ -269,6 +346,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <div style={{ marginTop: 32, textAlign: "center", fontSize: 10, color: "#ccc", borderTop: "1px solid #eee", paddingTop: 12 }}>
             Kwitansi ini digenerate otomatis oleh sistem Clemira Gold · {WEBSITE_URL.replace("https://", "")}
           </div>
+        </div>
         </div>
       </div>
     </>

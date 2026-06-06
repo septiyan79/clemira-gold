@@ -49,7 +49,7 @@ export default async function SalesInvoicePage({
         lines: {
           include: {
             stockUnit: { include: { product: true, owner: true } },
-            consignmentLine: { include: { supplier: true } },
+            consignmentLine: { include: { supplier: true, product: true } },
             swapEvent: { include: { originalUnit: { include: { product: true } } } },
           },
         },
@@ -72,7 +72,7 @@ export default async function SalesInvoicePage({
         .invoice-page-bg {
           background: #1A1612;
           min-height: 100%;
-          padding: 32px 16px;
+          padding: 24px 16px;
         }
         .invoice-wrap {
           background: #fff;
@@ -86,9 +86,82 @@ export default async function SalesInvoicePage({
           print-color-adjust: exact;
           -webkit-print-color-adjust: exact;
         }
+        .invoice-area-wrapper { /* default: no special behavior */ }
+        .inv-toolbar {
+          width: min(794px, 100%);
+          margin: 0 auto 16px;
+          background: rgba(26,22,18,0.92);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 10px;
+          padding: 6px 10px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          position: sticky;
+          top: 16px;
+          z-index: 100;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+        .inv-toolbar-left { display: flex; align-items: center; gap: 4px; }
+        .inv-toolbar-right { display: flex; align-items: center; gap: 4px; }
+        .inv-toolbar-divider {
+          width: 1px; height: 18px;
+          background: rgba(255,255,255,0.1);
+          flex-shrink: 0;
+        }
+        .inv-party-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 18px;
+        }
+        .inv-sig-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          margin-top: 24px;
+          align-items: flex-end;
+        }
+        .inv-table-scroll {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          margin-bottom: 14px;
+        }
+        .inv-table-scroll table { min-width: 360px; margin-bottom: 0; }
         .inv-table th, .inv-table td { border: 1px solid #e8e0d0; }
         .capitalize-words { text-transform: capitalize; }
+        @media screen and (max-width: 600px) {
+          .invoice-page-bg { padding: 0; }
+          .inv-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            background: #1A1612;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 12px;
+          }
+          .invoice-area-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px 16px 32px;
+          }
+          .inv-party-grid { grid-template-columns: 1fr; gap: 8px; margin-bottom: 12px; }
+          .inv-sig-grid { grid-template-columns: 1fr; gap: 10px; }
+          .inv-toolbar-divider { display: none; }
+          .inv-btn-label { display: none; }
+          .inv-toolbar-right { margin-left: auto; }
+        }
         @media print {
+          @page { size: A5 portrait; margin: 0; }
           .no-print { display: none !important; }
           .adm-sidebar { display: none !important; }
           .adm-body { margin-left: 0 !important; }
@@ -97,42 +170,38 @@ export default async function SalesInvoicePage({
           .adm-main { padding: 0 !important; overflow: visible !important; }
           body { background: #fff !important; }
           .invoice-page-bg { background: #fff !important; padding: 0 !important; }
-          .invoice-wrap { box-shadow: none !important; padding: 24px !important; width: 100% !important; min-height: auto !important; }
+          .invoice-wrap {
+            zoom: 0.705 !important;
+            width: 794px !important;
+            box-shadow: none !important;
+            min-height: auto !important;
+            padding: 48px 52px !important;
+          }
+          .invoice-area-wrapper { overflow: visible !important; padding: 0 !important; }
+          .inv-table-scroll { overflow: visible !important; }
+          .inv-table-scroll table { min-width: unset !important; }
           * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
         }
       `}</style>
 
       <div className="invoice-page-bg">
         {/* ── Toolbar ── */}
-        <div className="no-print" style={{
-          maxWidth: 794,
-          margin: "0 auto",
-          marginBottom: 16,
-          background: "rgba(255,255,255,0.05)",
-          border: "1px solid rgba(201,168,76,0.2)",
-          borderRadius: 10,
-          padding: "10px 16px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-          backdropFilter: "blur(8px)",
-        }}>
-          {/* Kiri: aksi transaksi */}
-          <InvoiceActions
-            transactionId={tx.id}
-            status={tx.status}
-            invoiceNo={tx.invoiceNo ?? ""}
-          />
-          {/* Divider */}
-          <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.12)", flexShrink: 0 }} />
-          {/* Kanan: aksi dokumen */}
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="no-print inv-toolbar">
+          <div className="inv-toolbar-left">
+            <InvoiceActions
+              transactionId={tx.id}
+              status={tx.status}
+              invoiceNo={tx.invoiceNo ?? ""}
+            />
+          </div>
+          <div className="inv-toolbar-divider" />
+          <div className="inv-toolbar-right">
             <ShareWhatsAppButton invoiceNo={tx.invoiceNo ?? ""} />
             <PrintButton />
           </div>
         </div>
 
+      <div className="invoice-area-wrapper">
       <div id="invoice-content" className="invoice-wrap" style={{ fontFamily: "'Segoe UI', sans-serif", color: "#333" }}>
 
         {/* ── Header ── */}
@@ -170,7 +239,7 @@ export default async function SalesInvoicePage({
         </div>
 
         {/* ── Dari / Kepada ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
+        <div className="inv-party-grid">
           {/* Dari */}
           <div style={{ padding: "14px 18px", background: "#fafaf8", borderRadius: 8, border: "1px solid #ede5d5" }}>
             <div style={{ fontSize: 10, letterSpacing: 1.8, color: "#C9A84C", textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>
@@ -203,7 +272,8 @@ export default async function SalesInvoicePage({
         </div>
 
         {/* ── Tabel Item ── */}
-        <table className="inv-table" style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20, fontSize: 13 }}>
+        <div className="inv-table-scroll">
+        <table className="inv-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ background: "#C9A84C" }}>
               {["#", "Brand", "Series", "Gramasi", "Serial / Certcode", "Harga Jual"].map((h, i) => (
@@ -228,7 +298,7 @@ export default async function SalesInvoicePage({
               const unit = line.stockUnit;
               const cons = line.consignmentLine;
               const swap = line.swapEvent;
-              const product = unit?.product ?? swap?.originalUnit.product;
+              const product = unit?.product ?? cons?.product ?? swap?.originalUnit.product;
 
               const brand = product?.brand ?? "—";
               const series = product?.series ?? "—";
@@ -264,6 +334,7 @@ export default async function SalesInvoicePage({
             </tr>
           </tfoot>
         </table>
+        </div>
 
         {/* ── Keterangan & Rekening ── */}
         <div style={{ padding: "16px 18px", background: "#fffdf7", border: "1px solid #e8d9b0", borderRadius: 8, marginBottom: 24, fontSize: 13, lineHeight: 1.7, color: "#555" }}>
@@ -296,7 +367,7 @@ export default async function SalesInvoicePage({
         )}
 
         {/* ── Tanda Tangan & QR ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 32, alignItems: "flex-end" }}>
+        <div className="inv-sig-grid">
           {/* Tanda tangan penjual */}
           <div style={{ textAlign: "center" }}>
             <div style={{ height: 64, borderBottom: "1px solid #ccc", marginBottom: 8 }} />
@@ -318,6 +389,7 @@ export default async function SalesInvoicePage({
         <div style={{ marginTop: 32, textAlign: "center", fontSize: 10, color: "#ccc", borderTop: "1px solid #eee", paddingTop: 12 }}>
           Dokumen digenerate otomatis oleh sistem Clemira Gold · {WEBSITE_URL.replace("https://", "")}
         </div>
+      </div>
       </div>
       </div>
     </>

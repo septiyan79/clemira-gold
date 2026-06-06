@@ -706,7 +706,7 @@ export default function TransactionForm() {
       }),
     });
     setKLoading(false);
-    if (res.ok) { router.push("/admin/stock/units"); return; }
+    if (res.ok) { router.push("/admin/sales"); return; }
     const j = await res.json();
     setKError(j.error ?? "Gagal menyimpan");
   }
