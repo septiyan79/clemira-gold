@@ -1,10 +1,8 @@
-import { PRODUCTS } from "./promo-data";
-
 export default function PromoHero() {
   const stats = [
-    // { label: `${PRODUCTS.length} Produk`, sub: "Tersedia" },
-    { label: "Coming Soon!", sub: "Sebentar lagi fitur ini hadir untuk kamu" },
-    // { label: "Buyback", sub: "Tinggi" },
+    { label: "Update Harian", sub: "Promo diperbarui setiap hari" },
+    { label: "Antam Certicard", sub: "Bersertifikat resmi"         },
+    { label: "Via WhatsApp",   sub: "Pemesanan langsung"           },
   ];
 
   return (
@@ -24,14 +22,14 @@ export default function PromoHero() {
         </p>
         <div className="fu d3" style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
           {stats.map(s => (
-            <div key={s.sub} style={{
+            <div key={s.label} style={{
               background: "rgba(201,168,76,.08)",
               border: "1px solid rgba(201,168,76,.2)",
               borderRadius: 8,
               padding: "10px 20px",
-              minWidth: 110,
+              minWidth: 130,
             }}>
-              <div className="fd" style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--gold)", lineHeight: 1 }}>{s.label}</div>
+              <div className="fd" style={{ fontSize: "1rem", fontWeight: 600, color: "var(--gold)", lineHeight: 1.2 }}>{s.label}</div>
               <div style={{ fontSize: 11, color: "#5A5045", marginTop: 4, letterSpacing: 1 }}>{s.sub.toUpperCase()}</div>
             </div>
           ))}

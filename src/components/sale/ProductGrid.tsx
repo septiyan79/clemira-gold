@@ -1,8 +1,8 @@
 import ProductCard from "./ProductCard";
-import { PRODUCTS } from "./promo-data";
+import type { DailyPromoItem } from "./promo-data";
 import WhatsAppPopover from "@/components/shared/WhatsAppPopover";
 
-export default function ProductGrid() {
+export default function ProductGrid({ promos }: { promos: DailyPromoItem[] }) {
   return (
     <section style={{ padding: "56px 20px 72px" }}>
       <div className="wrap">
@@ -21,11 +21,32 @@ export default function ProductGrid() {
           />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="promo-grid">
-          {PRODUCTS.map(p => (
-            <ProductCard key={p.id} p={p} />
-          ))}
-        </div>
+        {promos.length === 0 ? (
+          <div style={{
+            textAlign: "center",
+            padding: "72px 24px",
+            color: "#5A5045",
+          }}>
+            <p className="fd" style={{ fontSize: "1.4rem", color: "#7A6E5F", marginBottom: 12 }}>
+              Belum ada promo hari ini
+            </p>
+            <p style={{ fontSize: 14, marginBottom: 24 }}>
+              Cek kembali besok atau hubungi kami untuk informasi stok terbaru.
+            </p>
+            <WhatsAppPopover
+              message="Halo, apakah ada stok emas yang tersedia hari ini?"
+              label="☏ Tanya Stok ke Admin"
+              className="btn-gold"
+              style={{ fontSize: 14, padding: "12px 24px" }}
+            />
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="promo-grid">
+            {promos.map(p => (
+              <ProductCard key={p.id} p={p} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

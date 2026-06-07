@@ -1,9 +1,16 @@
 import type { CSSProperties } from "react";
 import GoldBarIcon from "./GoldBarIcon";
-import { type PromoProduct, type BadgeType, formatRupiah } from "./promo-data";
+import { type DailyPromoItem, type BadgeType, formatRupiah } from "./promo-data";
 import WhatsAppPopover from "@/components/shared/WhatsAppPopover";
 
-const BADGE_STYLES: Record<BadgeType, CSSProperties> = {
+const BADGE_LABELS: Record<string, string> = {
+  flash:     "FLASH SALE",
+  hot:       "HOT DEAL",
+  available: "TERSEDIA",
+  exclusive: "EKSKLUSIF",
+};
+
+const BADGE_STYLES: Record<string, CSSProperties> = {
   flash: {
     background: "linear-gradient(135deg,#C9A84C,#E8D49A)",
     color: "#1A1612",
@@ -29,9 +36,12 @@ const BADGE_STYLES: Record<BadgeType, CSSProperties> = {
   },
 };
 
-export default function ProductCard({ p }: { p: PromoProduct }) {
+export default function ProductCard({ p }: { p: DailyPromoItem }) {
   const stokColor = p.stok <= 2 ? "#EF5350" : p.stok <= 5 ? "#FF9800" : "#4CAF50";
-  const waMessage = `Halo, saya tertarik dengan ${p.name} seharga ${formatRupiah(p.hargaJual)} min!`;
+  const badgeStyle = BADGE_STYLES[p.badgeType] ?? BADGE_STYLES.available;
+  const badgeLabel = BADGE_LABELS[p.badgeType] ?? p.badgeType.toUpperCase();
+  const waMessage = `Halo, saya tertarik dengan ${p.nama} ${p.gramasi} seharga ${formatRupiah(p.hargaJual)} min!`;
+  const diskon = p.hargaNormal ? Math.round((1 - p.hargaJual / p.hargaNormal) * 100) : null;
 
   return (
     <div style={{
@@ -52,26 +62,30 @@ export default function ProductCard({ p }: { p: PromoProduct }) {
       }}>
         <div style={{ position: "absolute", top: 14, left: 14 }}>
           <span style={{
-            ...BADGE_STYLES[p.badgeType],
+            ...badgeStyle,
             padding: "4px 12px",
             borderRadius: 20,
             fontSize: 10,
             letterSpacing: 1.5,
             display: "inline-block",
-          }}>{p.badge}</span>
+          }}>{badgeLabel}</span>
         </div>
-        <div style={{ position: "absolute", top: 14, right: 14 }}>
-          <span style={{
-            background: "rgba(239,83,80,.15)",
-            border: "1px solid rgba(239,83,80,.4)",
-            color: "#EF5350",
-            padding: "4px 10px",
-            borderRadius: 20,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 1,
-          }}>-{p.diskon}%</span>
-        </div>
+
+        {diskon !== null && (
+          <div style={{ position: "absolute", top: 14, right: 14 }}>
+            <span style={{
+              background: "rgba(239,83,80,.15)",
+              border: "1px solid rgba(239,83,80,.4)",
+              color: "#EF5350",
+              padding: "4px 10px",
+              borderRadius: 20,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 1,
+            }}>-{diskon}%</span>
+          </div>
+        )}
+
         <div style={{ height: 110, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ width: 170, height: 106 }}>
             <GoldBarIcon gram={p.gramasi} />
@@ -86,24 +100,35 @@ export default function ProductCard({ p }: { p: PromoProduct }) {
 
       {/* Info area */}
       <div style={{ padding: "20px 22px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
-        <h3 className="fd" style={{ fontSize: "1.25rem", color: "#EDE8DE", fontWeight: 400, marginBottom: 8, lineHeight: 1.3 }}>
-          {p.name}
+        <h3 className="fd" style={{ fontSize: "1.25rem", color: "#EDE8DE", fontWeight: 400, marginBottom: 6, lineHeight: 1.3 }}>
+          {p.nama}
         </h3>
-        <p style={{ fontSize: 13, color: "#7A6E5F", lineHeight: 1.65, marginBottom: 14, flex: 1 }}>{p.desc}</p>
 
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-          {p.tag.map(t => (
-            <span key={t} style={{
-              fontSize: 10,
-              color: "#6A5E4F",
-              background: "rgba(255,255,255,.04)",
-              border: "1px solid rgba(255,255,255,.08)",
-              borderRadius: 4,
-              padding: "3px 8px",
-              letterSpacing: .5,
-            }}>{t}</span>
-          ))}
-        </div>
+        {p.kondisi && (
+          <p style={{ fontSize: 12, color: "#5A5045", marginBottom: 8 }}>
+            Kondisi: {p.kondisi}
+          </p>
+        )}
+
+        {p.deskripsi && (
+          <p style={{ fontSize: 13, color: "#7A6E5F", lineHeight: 1.65, marginBottom: 14, flex: 1 }}>{p.deskripsi}</p>
+        )}
+
+        {p.tags.length > 0 && (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+            {p.tags.map(t => (
+              <span key={t} style={{
+                fontSize: 10,
+                color: "#6A5E4F",
+                background: "rgba(255,255,255,.04)",
+                border: "1px solid rgba(255,255,255,.08)",
+                borderRadius: 4,
+                padding: "3px 8px",
+                letterSpacing: .5,
+              }}>{t}</span>
+            ))}
+          </div>
+        )}
 
         {/* Price block */}
         <div style={{
@@ -112,28 +137,43 @@ export default function ProductCard({ p }: { p: PromoProduct }) {
           borderRadius: 8,
           padding: "12px 14px",
           marginBottom: 16,
+          marginTop: "auto",
         }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          {p.hargaNormal ? (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+              <div>
+                <p style={{ fontSize: 10, color: "#5A5045", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 4 }}>
+                  Harga Promo
+                </p>
+                <p className="fd" style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--gold)", lineHeight: 1 }}>
+                  {formatRupiah(p.hargaJual)}
+                </p>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ fontSize: 10, color: "#5A5045", letterSpacing: 1, marginBottom: 2 }}>Normal</p>
+                <p style={{ fontSize: 13, color: "#5A5045", textDecoration: "line-through" }}>
+                  {formatRupiah(p.hargaNormal)}
+                </p>
+              </div>
+            </div>
+          ) : (
             <div>
               <p style={{ fontSize: 10, color: "#5A5045", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 4 }}>
-                Harga Promo
+                Harga
               </p>
               <p className="fd" style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--gold)", lineHeight: 1 }}>
                 {formatRupiah(p.hargaJual)}
               </p>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <p style={{ fontSize: 10, color: "#5A5045", letterSpacing: 1, marginBottom: 2 }}>Normal</p>
-              <p style={{ fontSize: 13, color: "#5A5045", textDecoration: "line-through" }}>
-                {formatRupiah(p.hargaNormal)}
+          )}
+
+          {p.hargaNormal && (
+            <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(201,168,76,.12)" }}>
+              <p style={{ fontSize: 11, color: "#4CAF50" }}>
+                Hemat {formatRupiah(p.hargaNormal - p.hargaJual)}
               </p>
             </div>
-          </div>
-          <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(201,168,76,.12)" }}>
-            <p style={{ fontSize: 11, color: "#4CAF50" }}>
-              Hemat {formatRupiah(p.hargaNormal - p.hargaJual)}
-            </p>
-          </div>
+          )}
         </div>
 
         <WhatsAppPopover

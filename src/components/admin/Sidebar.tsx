@@ -8,6 +8,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   Package,
+  Tag,
   TrendingUp,
   Calendar,
   CalendarDays,
@@ -48,6 +49,7 @@ const menuGroups: MenuGroup[] = [
     label: "Produk",
     items: [
       { href: "/admin/products", icon: Package, label: "Daftar Produk" },
+      { href: "/admin/promos",   icon: Tag,     label: "Promo Harian"  },
     ],
   },
   {

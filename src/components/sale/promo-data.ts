@@ -15,6 +15,20 @@ export interface PromoProduct {
   tag: string[];
 }
 
+// Data dari DB (DailyPromo model)
+export interface DailyPromoItem {
+  id: string;
+  nama: string;
+  gramasi: string;
+  badgeType: string;
+  hargaJual: number;
+  hargaNormal?: number; // opsional — akan diisi dari pricelist Clemira Gold ketika sudah tersedia
+  stok: number;
+  kondisi: string | null;
+  deskripsi: string | null;
+  tags: string[];
+}
+
 export function formatRupiah(n: number): string {
   return "Rp " + n.toLocaleString("id-ID");
 }

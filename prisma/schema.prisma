@@ -252,3 +252,17 @@ model OwnershipTransfer {
   fromOwner Owner     @relation("FromOwner", fields: [fromOwnerId], references: [id])
   toOwner   Owner     @relation("ToOwner", fields: [toOwnerId], references: [id])
 }
+
+model DailyPromo {
+  id        String   @id @default(cuid())
+  tanggal   DateTime @db.Date
+  nama      String
+  gramasi   String
+  badgeType String   @default("available")
+  hargaJual Decimal  @db.Decimal(14, 2)
+  stok      Int      @default(1)
+  kondisi   String?
+  deskripsi String?
+  tags      String[]
+  createdAt DateTime @default(now())
+}
