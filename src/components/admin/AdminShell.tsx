@@ -5,7 +5,7 @@ import AdminSidebar from "./Sidebar";
 import AdminHeader from "./Header";
 import type { User } from "next-auth";
 
-export default function AdminShell({ user, children }: { user: User | undefined; children: React.ReactNode }) {
+export default function AdminShell({ user, children, outstandingSwapCount }: { user: User | undefined; children: React.ReactNode; outstandingSwapCount?: number }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const close = useCallback(() => setSidebarOpen(false), []);
 
@@ -13,7 +13,7 @@ export default function AdminShell({ user, children }: { user: User | undefined;
     <>
       <div className="adm-layout">
         <div className={`adm-overlay${sidebarOpen ? " on" : ""}`} onClick={close} />
-        <AdminSidebar open={sidebarOpen} onClose={close} />
+        <AdminSidebar open={sidebarOpen} onClose={close} outstandingSwapCount={outstandingSwapCount} />
         <div className="adm-body">
           <AdminHeader user={user} onMenuClick={() => setSidebarOpen(o => !o)} />
           <main className="adm-main">{children}</main>

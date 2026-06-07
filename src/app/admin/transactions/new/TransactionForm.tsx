@@ -10,14 +10,14 @@ type Counterparty = { id: string; name: string };
 type Product      = { id: string; name: string; weightGram: number; brand: string | null; series: string | null };
 type AvailUnit    = {
   id: string; serialNumber: string | null; certCode: string | null;
-  mintYear: number | null; condition: string; referencePrice: number | null;
+  mintYear: number | null; referencePrice: number | null;
   product: { brand: string | null; weightGram: number; series: string | null };
   owner: { name: string };
 };
 type PurchUnit = {
   _key: number; productId: string; ownerId: string;
   serialNumber: string; certCode: string; mintYear: string;
-  condition: "new" | "used"; unitPrice: string; swapEventId: string;
+  unitPrice: string; swapEventId: string;
 };
 type SwapEventOption = {
   id: string;
@@ -33,7 +33,7 @@ type SwapEventOption = {
 let _k = 0;
 const makeUnit = (): PurchUnit => ({
   _key: ++_k, productId: "", ownerId: "", serialNumber: "", certCode: "",
-  mintYear: "", condition: "new", unitPrice: "", swapEventId: "",
+  mintYear: "", unitPrice: "", swapEventId: "",
 });
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -594,6 +594,32 @@ export default function TransactionForm() {
     if (t === "beli" || t === "jual" || t === "konsinyasi" || t === "swap") setTab(t);
   }, [params]);
 
+  type ReplaceInfo = {
+    swapId: string;
+    productId: string; productLabel: string;
+    ownerId: string;   ownerName: string;
+    serialNumber: string;
+  };
+  const [replaceInfo, setReplaceInfo] = useState<ReplaceInfo | null>(null);
+
+  useEffect(() => {
+    const swapId       = params.get("replaceSwapId");
+    const productId    = params.get("productId");
+    const productLabel = params.get("productLabel") ?? "";
+    const ownerId      = params.get("ownerId");
+    const ownerName    = params.get("ownerName") ?? "";
+    const serialNumber = params.get("serialNumber") ?? "";
+    const unitPrice    = params.get("unitPrice") ?? "";
+    const supplierId   = params.get("supplierId") ?? "";
+
+    if (swapId && productId && ownerId) {
+      setReplaceInfo({ swapId, productId, productLabel, ownerId, ownerName, serialNumber });
+      setBUnits([{ ...makeUnit(), productId, ownerId, swapEventId: swapId, unitPrice }]);
+      if (supplierId) setBSupplier(supplierId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [owners,      setOwners]      = useState<Owner[]>([]);
   const [suppliers,   setSuppliers]   = useState<Counterparty[]>([]);
   const [buyers,      setBuyers]      = useState<Counterparty[]>([]);
@@ -633,6 +659,9 @@ export default function TransactionForm() {
     if (bUnits.some(u => !u.productId || !u.ownerId || !u.unitPrice)) {
       setBError("Lengkapi produk, pemilik, dan harga beli semua unit"); return;
     }
+    if (bUnits.some(u => !u.serialNumber.trim())) {
+      setBError("Nomor serial semua unit wajib diisi"); return;
+    }
     setBLoading(true);
     const totalAmount = bUnits.reduce((s, u) => s + (parseFloat(u.unitPrice) || 0), 0);
     const res = await fetch("/api/stock/purchase-orders", {
@@ -649,7 +678,6 @@ export default function TransactionForm() {
           serialNumber: u.serialNumber  || undefined,
           certCode:     u.certCode      || undefined,
           mintYear:     u.mintYear      ? parseInt(u.mintYear) : undefined,
-          condition:    u.condition,
           unitPrice:    parseFloat(u.unitPrice),
           swapEventId:  u.swapEventId   || undefined,
         })),
@@ -732,7 +760,6 @@ export default function TransactionForm() {
   const [swRepSerial,    setSwRepSerial]    = useState("");
   const [swRepCert,      setSwRepCert]      = useState("");
   const [swRepYear,      setSwRepYear]      = useState("");
-  const [swRepCondition, setSwRepCondition] = useState<"new"|"used">("new");
   const [swRepPrice,     setSwRepPrice]     = useState("");
 
   // ── Jual Stok ──────────────────────────────────────────────────────────────
@@ -814,10 +841,11 @@ export default function TransactionForm() {
     if (!swUnitId)         { setSwError("Pilih unit yang di-swap"); return; }
     if (!swSell || !swCost){ setSwError("Harga jual dan biaya penggantian wajib diisi"); return; }
     if (swRecordNow) {
-      if (!swRepSupp)    { setSwError("Supplier pengganti wajib dipilih"); return; }
-      if (!swRepProduct) { setSwError("Produk pengganti wajib dipilih"); return; }
-      if (!swRepOwner)   { setSwError("Pemilik unit pengganti wajib dipilih"); return; }
-      if (!swRepPrice)   { setSwError("Harga beli unit pengganti wajib diisi"); return; }
+      if (!swRepSupp)              { setSwError("Supplier pengganti wajib dipilih"); return; }
+      if (!swRepProduct)           { setSwError("Produk pengganti wajib dipilih"); return; }
+      if (!swRepOwner)             { setSwError("Pemilik unit pengganti wajib dipilih"); return; }
+      if (!swRepSerial.trim())     { setSwError("Nomor serial unit pengganti wajib diisi"); return; }
+      if (!swRepPrice)             { setSwError("Harga beli unit pengganti wajib diisi"); return; }
     }
 
     setSwLoading(true);
@@ -873,7 +901,6 @@ export default function TransactionForm() {
             serialNumber: swRepSerial   || undefined,
             certCode:     swRepCert     || undefined,
             mintYear:     swRepYear     ? parseInt(swRepYear) : undefined,
-            condition:    swRepCondition,
             unitPrice:    parseFloat(swRepPrice),
             swapEventId,
           }],
@@ -931,6 +958,29 @@ export default function TransactionForm() {
       {/* ── TAB: BELI STOK ────────────────────────────────────────────────── */}
       {tab === "beli" && (
         <form onSubmit={submitBeli} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Replacement mode banner */}
+          {replaceInfo && (
+            <div style={{
+              background: "rgba(201,168,76,.07)", border: "1px solid rgba(201,168,76,.25)",
+              borderRadius: 10, padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start",
+            }}>
+              <span style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>↩</span>
+              <div>
+                <div style={{ fontSize: 13, color: "#EDE8DE", fontWeight: 500, marginBottom: 4 }}>
+                  Mode: Catat Unit Pengganti Swap
+                </div>
+                <div style={{ fontSize: 12, color: "#7A6E5F" }}>
+                  Produk dan pemilik dikunci sesuai unit asal.{" "}
+                  Isi nomor serial, cert code, dan harga beli unit pengganti yang baru.
+                </div>
+                <div style={{ fontSize: 12, color: "#5A5045", marginTop: 6, display: "flex", gap: 16, flexWrap: "wrap" }}>
+                  <span>Produk: <b style={{ color: "var(--gold)" }}>{replaceInfo.productLabel}</b></span>
+                  <span>Pemilik: <b style={{ color: "#9A8E7E" }}>{replaceInfo.ownerName}</b></span>
+                  {replaceInfo.serialNumber && <span>S/N asal: <b style={{ color: "#9A8E7E", fontFamily: "monospace" }}>{replaceInfo.serialNumber}</b></span>}
+                </div>
+              </div>
+            </div>
+          )}
           <div style={S.card}>
             <p style={{ fontSize: 12, color: "#5A5045", marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Info Pembelian</p>
             <Grid cols={2}>
@@ -958,7 +1008,7 @@ export default function TransactionForm() {
                 <p style={{ fontSize: 12, color: "#5A5045", letterSpacing: 1, textTransform: "uppercase" }}>
                   Unit #{i + 1}
                 </p>
-                {bUnits.length > 1 && (
+                {bUnits.length > 1 && !replaceInfo && (
                   <button type="button" onClick={() => setBUnits(u2 => u2.filter(x => x._key !== u._key))}
                     style={{ fontSize: 18, color: "#EF5350", background: "none", border: "none", cursor: "pointer", lineHeight: 1 }}>
                     ×
@@ -966,51 +1016,74 @@ export default function TransactionForm() {
                 )}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {/* Swap event linkage */}
-                <F
-                  label="Unit Pengganti Swap (opsional)"
-                  tooltip="Isi ini hanya jika unit yang dibeli adalah pengganti dari transaksi swap yang sudah tercatat sebelumnya (outstanding swap). Memilih swap event di sini akan menghubungkan unit baru ke transaksi swap tersebut dan mewarisi referencePrice dari unit asal secara otomatis. Biarkan kosong jika ini pembelian stok biasa."
-                >
-                  <Sel value={u.swapEventId} onChange={v => updateUnit(u._key, { swapEventId: v })}>
-                    <option value="">— Bukan pengganti swap —</option>
-                    {openSwaps.map(e => <option key={e.id} value={e.id}>{swapEventLabel(e)}</option>)}
-                  </Sel>
-                </F>
-                {u.swapEventId && (() => {
-                  const ev = openSwaps.find(e => e.id === u.swapEventId);
-                  if (!ev) return null;
-                  return (
-                    <div style={{ background: "rgba(201,168,76,.06)", border: "1px solid rgba(201,168,76,.15)", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#7A6E5F" }}>
-                      Ref price diwarisi otomatis dari unit asal:{" "}
-                      <b style={{ color: "var(--gold)" }}>{fmt(ev.originalUnit.referencePrice ?? 0)}</b>
-                      {" "}— harga beli unit ini tetap dicatat sebagai <i>actual purchase price</i>
-                    </div>
-                  );
-                })()}
+                {/* Swap event linkage — hidden in replacement mode */}
+                {!replaceInfo && (
+                  <>
+                    <F
+                      label="Unit Pengganti Swap (opsional)"
+                      tooltip="Isi ini hanya jika unit yang dibeli adalah pengganti dari transaksi swap yang sudah tercatat sebelumnya (outstanding swap). Memilih swap event di sini akan menghubungkan unit baru ke transaksi swap tersebut dan mewarisi referencePrice dari unit asal secara otomatis. Biarkan kosong jika ini pembelian stok biasa."
+                    >
+                      <Sel value={u.swapEventId} onChange={v => updateUnit(u._key, { swapEventId: v })}>
+                        <option value="">— Bukan pengganti swap —</option>
+                        {openSwaps.map(e => <option key={e.id} value={e.id}>{swapEventLabel(e)}</option>)}
+                      </Sel>
+                    </F>
+                    {u.swapEventId && (() => {
+                      const ev = openSwaps.find(e => e.id === u.swapEventId);
+                      if (!ev) return null;
+                      return (
+                        <div style={{ background: "rgba(201,168,76,.06)", border: "1px solid rgba(201,168,76,.15)", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#7A6E5F" }}>
+                          Ref price diwarisi otomatis dari unit asal:{" "}
+                          <b style={{ color: "var(--gold)" }}>{fmt(ev.originalUnit.referencePrice ?? 0)}</b>
+                          {" "}— harga beli unit ini tetap dicatat sebagai <i>actual purchase price</i>
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
                 <Grid cols={2}>
-                  <F label="Produk *" addon={
-                    <QuickAddProduct
-                      onCreated={(p) => {
-                        setProducts(prev => prev.find(x => x.id === p.id) ? prev : [...prev, p]);
-                        updateUnit(u._key, { productId: p.id });
-                      }}
-                    />
-                  }>
-                    <Sel value={u.productId} onChange={v => updateUnit(u._key, { productId: v })}>
-                      <option value="">— Pilih produk —</option>
-                      {products.map(p => <option key={p.id} value={p.id}>{prodLabel(p)}</option>)}
-                    </Sel>
-                  </F>
-                  <F label="Pemilik *" addon={<QuickAdd type="owner" onCreated={(id, name) => { setOwners(o => o.find(x => x.id === id) ? o : [...o, { id, name }]); updateUnit(u._key, { ownerId: id }); }} />}>
-                    <Sel value={u.ownerId} onChange={v => updateUnit(u._key, { ownerId: v })}>
-                      <option value="">— Pilih pemilik —</option>
-                      {owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                    </Sel>
-                  </F>
+                  {replaceInfo ? (
+                    /* Locked product display in replacement mode */
+                    <>
+                      <F label="Produk">
+                        <div style={{ ...S.inp, display: "flex", alignItems: "center", color: "var(--gold)", opacity: 0.8, cursor: "not-allowed" }}>
+                          {replaceInfo.productLabel}
+                        </div>
+                      </F>
+                      <F label="Pemilik">
+                        <div style={{ ...S.inp, display: "flex", alignItems: "center", color: "#9A8E7E", opacity: 0.8, cursor: "not-allowed" }}>
+                          {replaceInfo.ownerName}
+                        </div>
+                      </F>
+                    </>
+                  ) : (
+                    /* Normal editable fields */
+                    <>
+                      <F label="Produk *" addon={
+                        <QuickAddProduct
+                          onCreated={(p) => {
+                            setProducts(prev => prev.find(x => x.id === p.id) ? prev : [...prev, p]);
+                            updateUnit(u._key, { productId: p.id });
+                          }}
+                        />
+                      }>
+                        <Sel value={u.productId} onChange={v => updateUnit(u._key, { productId: v })}>
+                          <option value="">— Pilih produk —</option>
+                          {products.map(p => <option key={p.id} value={p.id}>{prodLabel(p)}</option>)}
+                        </Sel>
+                      </F>
+                      <F label="Pemilik *" addon={<QuickAdd type="owner" onCreated={(id, name) => { setOwners(o => o.find(x => x.id === id) ? o : [...o, { id, name }]); updateUnit(u._key, { ownerId: id }); }} />}>
+                        <Sel value={u.ownerId} onChange={v => updateUnit(u._key, { ownerId: v })}>
+                          <option value="">— Pilih pemilik —</option>
+                          {owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                        </Sel>
+                      </F>
+                    </>
+                  )}
                 </Grid>
                 <Grid cols={3}>
-                  <F label="No. Serial">
-                    <Inp value={u.serialNumber} onChange={v => updateUnit(u._key, { serialNumber: v })} placeholder="Opsional" />
+                  <F label="No. Serial *">
+                    <Inp value={u.serialNumber} onChange={v => updateUnit(u._key, { serialNumber: v })} placeholder="cth. AG123456" />
                   </F>
                   <F label="Cert Code">
                     <Inp value={u.certCode} onChange={v => updateUnit(u._key, { certCode: v })} placeholder="Opsional" />
@@ -1019,29 +1092,23 @@ export default function TransactionForm() {
                     <Inp type="number" value={u.mintYear} onChange={v => updateUnit(u._key, { mintYear: v })} placeholder="cth. 2024" />
                   </F>
                 </Grid>
-                <Grid cols={2}>
-                  <F label="Kondisi *">
-                    <Sel value={u.condition} onChange={v => updateUnit(u._key, { condition: v as "new" | "used" })}>
-                      <option value="new">Baru</option>
-                      <option value="used">Bekas</option>
-                    </Sel>
-                  </F>
-                  <F label="Harga Beli (Rp) *">
-                    <Inp type="number" value={u.unitPrice} onChange={v => updateUnit(u._key, { unitPrice: v })} placeholder="0" />
-                  </F>
-                </Grid>
+                <F label="Harga Beli (Rp) *">
+                  <Inp type="number" value={u.unitPrice} onChange={v => updateUnit(u._key, { unitPrice: v })} placeholder="0" />
+                </F>
               </div>
             </div>
           ))}
 
-          <button type="button" onClick={() => setBUnits(u => [...u, makeUnit()])}
-            style={{
-              height: 38, borderRadius: 8, fontSize: 13, cursor: "pointer",
-              border: "1px dashed rgba(255,255,255,.12)", background: "transparent",
-              color: "#5A5045", fontFamily: "var(--font-dm-sans), sans-serif",
-            }}>
-            + Tambah Unit
-          </button>
+          {!replaceInfo && (
+            <button type="button" onClick={() => setBUnits(u => [...u, makeUnit()])}
+              style={{
+                height: 38, borderRadius: 8, fontSize: 13, cursor: "pointer",
+                border: "1px dashed rgba(255,255,255,.12)", background: "transparent",
+                color: "#5A5045", fontFamily: "var(--font-dm-sans), sans-serif",
+              }}>
+              + Tambah Unit
+            </button>
+          )}
 
           {bUnits.length > 0 && (
             <div style={{ fontSize: 13, color: "#7A6E5F", padding: "2px 0" }}>
@@ -1267,23 +1334,64 @@ export default function TransactionForm() {
           <div style={S.card}>
             <p style={{ fontSize: 12, color: "#5A5045", marginBottom: 16, letterSpacing: 1, textTransform: "uppercase" }}>Unit yang Di-swap (keluar dari stok)</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <F label="Cari Unit">
-                <Inp value={swSearch} onChange={v => { setSwSearch(v); setSwUnitId(""); }}
-                  placeholder="Cari serial, brand, cert…" />
-              </F>
               <F label="Pilih Unit *">
-                <Sel value={swUnitId} onChange={setSwUnitId}>
-                  <option value="">— Pilih unit —</option>
-                  {swFiltered.map(u => (
-                    <option key={u.id} value={u.id}>{unitLabel(u)}</option>
-                  ))}
-                </Sel>
+                {swUnitId ? (
+                  /* Selected state */
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ ...S.inp, flex: 1, display: "flex", alignItems: "center", color: "var(--gold)" }}>
+                      {unitLabel(swUnit!)}
+                    </div>
+                    <button type="button" onClick={() => { setSwUnitId(""); setSwSearch(""); }}
+                      style={{ flexShrink: 0, background: "none", border: "none", color: "#5A5045", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: "0 4px" }}>
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  /* Search + dropdown state */
+                  <div style={{ position: "relative" }}>
+                    <input
+                      autoComplete="off"
+                      value={swSearch}
+                      onChange={e => setSwSearch(e.target.value)}
+                      placeholder="Ketik nomor serial, brand, gramasi…"
+                      style={S.inp}
+                    />
+                    {swSearch.trim() && (
+                      <div style={{
+                        position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 10,
+                        background: "#1E1A14", border: "1px solid rgba(255,255,255,.1)",
+                        borderRadius: 8, overflow: "hidden", maxHeight: 240, overflowY: "auto",
+                      }}>
+                        {swFiltered.length === 0 ? (
+                          <div style={{ padding: "12px 14px", fontSize: 13, color: "#5A5045" }}>Tidak ditemukan</div>
+                        ) : swFiltered.map((u, i) => (
+                          <div key={u.id}
+                            onMouseDown={e => { e.preventDefault(); setSwUnitId(u.id); setSwSearch(""); }}
+                            style={{
+                              padding: "10px 14px", cursor: "pointer", fontSize: 13,
+                              borderBottom: i < swFiltered.length - 1 ? "1px solid rgba(255,255,255,.05)" : undefined,
+                              background: "rgba(255,255,255,.02)",
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,.07)")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,.02)")}
+                          >
+                            <div style={{ color: "#EDE8DE" }}>{unitLabel(u)}</div>
+                            {u.referencePrice != null && (
+                              <div style={{ fontSize: 11, color: "#5A5045", marginTop: 2 }}>Ref: {fmt(u.referencePrice)}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </F>
               {swUnit && (
                 <div style={{ background: "rgba(201,168,76,.06)", border: "1px solid rgba(201,168,76,.15)", borderRadius: 8, padding: "10px 14px", fontSize: 12, display: "flex", gap: 20, flexWrap: "wrap" }}>
                   <span style={{ color: "#5A5045" }}>Ref Price: <b style={{ color: "var(--gold)" }}>{fmt(swUnit.referencePrice ?? 0)}</b></span>
                   {swUnit.serialNumber && <span style={{ color: "#5A5045" }}>S/N: <b style={{ color: "#9A8E7E" }}>{swUnit.serialNumber}</b></span>}
                   {swUnit.certCode    && <span style={{ color: "#5A5045" }}>Cert: <b style={{ color: "#9A8E7E" }}>{swUnit.certCode}</b></span>}
+                  {swUnit.mintYear    && <span style={{ color: "#5A5045" }}>Tahun: <b style={{ color: "#9A8E7E" }}>{swUnit.mintYear}</b></span>}
                   <span style={{ color: "#5A5045" }}>Pemilik: <b style={{ color: "#9A8E7E" }}>{swUnit.owner.name}</b></span>
                 </div>
               )}
@@ -1350,8 +1458,8 @@ export default function TransactionForm() {
                   </Sel>
                 </F>
                 <Grid cols={3}>
-                  <F label="No. Serial">
-                    <Inp value={swRepSerial} onChange={setSwRepSerial} placeholder="Opsional" />
+                  <F label="No. Serial *">
+                    <Inp value={swRepSerial} onChange={setSwRepSerial} placeholder="cth. AG123456" />
                   </F>
                   <F label="Cert Code">
                     <Inp value={swRepCert} onChange={setSwRepCert} placeholder="Opsional" />
@@ -1360,17 +1468,9 @@ export default function TransactionForm() {
                     <Inp type="number" value={swRepYear} onChange={setSwRepYear} placeholder="cth. 2024" />
                   </F>
                 </Grid>
-                <Grid cols={2}>
-                  <F label="Kondisi *">
-                    <Sel value={swRepCondition} onChange={v => setSwRepCondition(v as "new" | "used")}>
-                      <option value="new">Baru</option>
-                      <option value="used">Bekas</option>
-                    </Sel>
-                  </F>
-                  <F label="Harga Beli dari Supplier (Rp) *">
-                    <Inp type="number" value={swRepPrice} onChange={setSwRepPrice} placeholder="0" />
-                  </F>
-                </Grid>
+                <F label="Harga Beli dari Supplier (Rp) *">
+                  <Inp type="number" value={swRepPrice} onChange={setSwRepPrice} placeholder="0" />
+                </F>
                 <p style={{ fontSize: 12, color: "#4A3E2E", fontStyle: "italic" }}>
                   Ref price unit pengganti diwarisi otomatis dari unit yang di-swap.
                 </p>

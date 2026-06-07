@@ -17,10 +17,11 @@ export default async function OutstandingSwapsPage() {
     include: {
       originalUnit: {
         include: {
-          product: { select: { brand: true, weightGram: true, series: true } },
-          owner:   { select: { name: true } },
+          product: { select: { id: true, brand: true, weightGram: true, series: true } },
+          owner:   { select: { id: true, name: true } },
         },
       },
+      supplier: { select: { id: true } },
       transactionLine: {
         select: {
           sellPrice: true,
@@ -122,7 +123,19 @@ export default async function OutstandingSwapsPage() {
                           {p.series && <span style={{ color: "#5A5045", fontWeight: 400 }}> ({p.series})</span>}
                         </td>
                         <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: 12 }}>
-                          {u.serialNumber ?? <span style={{ color: "#3A342A" }}>—</span>}
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                            {u.serialNumber ?? <span style={{ color: "#3A342A" }}>—</span>}
+                            {u.mintYear && (
+                              <span style={{
+                                fontFamily: "var(--font-dm-sans), sans-serif",
+                                fontSize: 10, padding: "1px 6px", borderRadius: 4,
+                                background: "rgba(255,255,255,.06)", color: "#5A5045",
+                                letterSpacing: 0.5, whiteSpace: "nowrap",
+                              }}>
+                                {u.mintYear}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td style={tdStyle}>{u.owner.name}</td>
                         <td style={{ ...tdStyle, color: "#EDE8DE" }}>
@@ -138,17 +151,32 @@ export default async function OutstandingSwapsPage() {
                           {ev.replacementCost ? fmt(ev.replacementCost.toNumber()) : "belum diset"}
                         </td>
                         <td style={tdStyle}>
-                          <Link
-                            href="/admin/transactions/new"
-                            style={{
-                              fontSize: 12, padding: "5px 12px", borderRadius: 6,
-                              border: "1px solid rgba(201,168,76,.35)",
-                              background: "rgba(201,168,76,.08)", color: "var(--gold)",
-                              textDecoration: "none", whiteSpace: "nowrap",
-                            }}
-                          >
-                            Catat Pengganti
-                          </Link>
+                          {(() => {
+                            const qs = new URLSearchParams({
+                              tab:           "beli",
+                              replaceSwapId: ev.id,
+                              productId:     u.product.id,
+                              productLabel:  `${p.brand ?? "—"} ${p.weightGram.toNumber()}gr${p.series ? ` (${p.series})` : ""}`,
+                              ownerId:       u.owner.id,
+                              ownerName:     u.owner.name,
+                              ...(u.serialNumber     ? { serialNumber: u.serialNumber } : {}),
+                              ...(ev.replacementCost ? { unitPrice: ev.replacementCost.toNumber().toString() } : {}),
+                              ...(ev.supplier        ? { supplierId: ev.supplier.id } : {}),
+                            });
+                            return (
+                              <Link
+                                href={`/admin/transactions/new?${qs}`}
+                                style={{
+                                  fontSize: 12, padding: "5px 12px", borderRadius: 6,
+                                  border: "1px solid rgba(201,168,76,.35)",
+                                  background: "rgba(201,168,76,.08)", color: "var(--gold)",
+                                  textDecoration: "none", whiteSpace: "nowrap",
+                                }}
+                              >
+                                Catat Pengganti
+                              </Link>
+                            );
+                          })()}
                         </td>
                       </tr>
                     );

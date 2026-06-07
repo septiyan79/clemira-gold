@@ -106,7 +106,7 @@ const menuGroups: MenuGroup[] = [
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function AdminSidebar({ open, onClose, outstandingSwapCount }: { open: boolean; onClose: () => void; outstandingSwapCount?: number }) {
   const pathname     = usePathname();
   const searchParams = useSearchParams();
 
@@ -182,6 +182,16 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
                       <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         <Icon size={16} />
                         {item.label}
+                        {item.label === "Catat Transaksi" && !isOpen && outstandingSwapCount != null && outstandingSwapCount > 0 && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, lineHeight: 1,
+                            padding: "2px 6px", borderRadius: 10,
+                            background: "rgba(239,83,80,.2)", color: "#EF5350",
+                            minWidth: 18, textAlign: "center",
+                          }}>
+                            {outstandingSwapCount}
+                          </span>
+                        )}
                       </span>
                       <ChevronDown size={13} style={{
                         transition: "transform .2s",
@@ -209,7 +219,17 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
                               textDecoration: "none", transition: "all 0.2s",
                             }}>
                               <SubIcon size={14} />
-                              {sub.label}
+                              <span style={{ flex: 1 }}>{sub.label}</span>
+                              {sub.label === "Outstanding Swaps" && outstandingSwapCount != null && outstandingSwapCount > 0 && (
+                                <span style={{
+                                  fontSize: 10, fontWeight: 700, lineHeight: 1,
+                                  padding: "2px 6px", borderRadius: 10,
+                                  background: "rgba(239,83,80,.2)", color: "#EF5350",
+                                  minWidth: 18, textAlign: "center",
+                                }}>
+                                  {outstandingSwapCount}
+                                </span>
+                              )}
                             </Link>
                           );
                         })}
