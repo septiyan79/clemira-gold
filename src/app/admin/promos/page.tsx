@@ -2,12 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { cleanupOldPromos } from "./actions";
 import PromoForm from "./PromoForm";
 import PromoTable from "./PromoTable";
+import ShareButton from "./ShareButton";
 
 export const dynamic = "force-dynamic";
 
 function getToday(): Date {
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000); // UTC+7 WIB
+  return new Date(Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate()));
 }
 
 export default async function PromosPage() {
@@ -46,10 +48,11 @@ export default async function PromosPage() {
 
       <PromoForm />
 
-      <div style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: "#7A6E5F", letterSpacing: 1, textTransform: "uppercase" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, gap: 12 }}>
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: "#7A6E5F", letterSpacing: 1, textTransform: "uppercase", margin: 0 }}>
           Item Promo Hari Ini ({promoRows.length})
         </h2>
+        <ShareButton promos={promoRows} />
       </div>
 
       <PromoTable promos={promoRows} />

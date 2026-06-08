@@ -15,11 +15,23 @@ export type PromoRow = {
   tags: string[];
 };
 
+export type PromoInput = {
+  nama: string;
+  gramasi: string;
+  badgeType: string;
+  hargaJual: number;
+  stok: number;
+  kondisi: string | null;
+  deskripsi: string | null;
+  tags: string[];
+};
+
 type ActionResult = { error: string } | { success: true };
 
 function getToday(): Date {
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000); // UTC+7 WIB
+  return new Date(Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate()));
 }
 
 export async function cleanupOldPromos(): Promise<void> {
@@ -28,7 +40,35 @@ export async function cleanupOldPromos(): Promise<void> {
   });
 }
 
-export async function createPromo(formData: FormData): Promise<ActionResult> {
+export async function createPromos(items: PromoInput[]): Promise<ActionResult> {
+  if (items.length === 0) return { error: "Tidak ada item untuk disimpan" };
+
+  const today = getToday();
+
+  await prisma.$transaction(
+    items.map(item =>
+      prisma.dailyPromo.create({
+        data: {
+          tanggal: today,
+          nama: item.nama,
+          gramasi: item.gramasi,
+          badgeType: item.badgeType,
+          hargaJual: item.hargaJual,
+          stok: item.stok,
+          kondisi: item.kondisi,
+          deskripsi: item.deskripsi,
+          tags: item.tags,
+        },
+      })
+    )
+  );
+
+  revalidatePath("/admin/promos");
+  revalidatePath("/sale");
+  return { success: true };
+}
+
+export async function updatePromo(id: string, formData: FormData): Promise<ActionResult> {
   const nama = (formData.get("nama") as string)?.trim();
   const gramasi = formData.get("gramasi") as string;
   const badgeType = formData.get("badgeType") as string;
@@ -46,18 +86,9 @@ export async function createPromo(formData: FormData): Promise<ActionResult> {
     return { error: "Nama, gramasi, badge, dan harga jual wajib diisi" };
   }
 
-  await prisma.dailyPromo.create({
-    data: {
-      tanggal: getToday(),
-      nama,
-      gramasi,
-      badgeType,
-      hargaJual,
-      stok,
-      ...(kondisi ? { kondisi } : {}),
-      ...(deskripsi ? { deskripsi } : {}),
-      tags,
-    },
+  await prisma.dailyPromo.update({
+    where: { id },
+    data: { nama, gramasi, badgeType, hargaJual, stok, kondisi, deskripsi, tags },
   });
 
   revalidatePath("/admin/promos");
