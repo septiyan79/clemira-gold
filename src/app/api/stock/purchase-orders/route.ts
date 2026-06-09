@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateInvoiceNo } from "@/lib/invoice";
+import { requireAdmin } from "@/lib/api-auth";
 
 interface UnitInput {
   productId: string;
@@ -21,6 +22,8 @@ interface UnitInput {
 }
 
 export async function GET() {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const orders = await prisma.purchaseOrder.findMany({
     include: {
       supplier: true,
@@ -54,14 +57,34 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const { supplierId, goldSpotPrice, totalAmount, purchasedAt, notes, units } =
     await req.json();
 
-  if (!supplierId || !totalAmount || !Array.isArray(units) || units.length === 0) {
-    return Response.json(
-      { error: "supplierId, totalAmount, and units[] are required" },
-      { status: 400 },
-    );
+  if (!supplierId || typeof supplierId !== "string") {
+    return Response.json({ error: "supplierId is required" }, { status: 400 });
+  }
+  if (!Array.isArray(units) || units.length === 0) {
+    return Response.json({ error: "units[] is required and must not be empty" }, { status: 400 });
+  }
+  if (typeof totalAmount !== "number" || !isFinite(totalAmount) || totalAmount <= 0) {
+    return Response.json({ error: "totalAmount must be a positive number" }, { status: 400 });
+  }
+  if (purchasedAt !== undefined && purchasedAt !== null && isNaN(Date.parse(purchasedAt))) {
+    return Response.json({ error: "purchasedAt is not a valid date" }, { status: 400 });
+  }
+  for (let i = 0; i < (units as UnitInput[]).length; i++) {
+    const u = (units as UnitInput[])[i];
+    if (!u.productId || typeof u.productId !== "string") {
+      return Response.json({ error: `units[${i}].productId is required` }, { status: 400 });
+    }
+    if (!u.ownerId || typeof u.ownerId !== "string") {
+      return Response.json({ error: `units[${i}].ownerId is required` }, { status: 400 });
+    }
+    if (typeof u.unitPrice !== "number" || !isFinite(u.unitPrice) || u.unitPrice <= 0) {
+      return Response.json({ error: `units[${i}].unitPrice must be a positive number` }, { status: 400 });
+    }
   }
 
   const result = await prisma.$transaction(async (tx) => {

@@ -46,6 +46,9 @@ export async function fetchHargaFromSheets(): Promise<GoldPriceRow[]> {
   });
 
   const rows = response.data.values ?? [];
+  if (rows.length > 10_000) {
+    throw new Error(`Sheet data too large: ${rows.length} rows (max 10,000)`);
+  }
   const result: GoldPriceRow[] = [];
 
   for (const row of rows) {

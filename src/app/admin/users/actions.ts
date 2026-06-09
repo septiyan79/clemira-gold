@@ -25,7 +25,9 @@ export async function createUser(data: {
     revalidatePath("/admin/users");
     return {};
   } catch (e) {
-    return { error: String(e) };
+    if (e instanceof Error && e.message === "Unauthorized") return { error: "Unauthorized" };
+    console.error("createUser error:", e);
+    return { error: "Terjadi kesalahan. Coba lagi." };
   }
 }
 
@@ -42,7 +44,9 @@ export async function updateUser(
     revalidatePath("/admin/users");
     return {};
   } catch (e) {
-    return { error: String(e) };
+    if (e instanceof Error && e.message === "Unauthorized") return { error: "Unauthorized" };
+    console.error("updateUser error:", e);
+    return { error: "Terjadi kesalahan. Coba lagi." };
   }
 }
 
@@ -54,6 +58,8 @@ export async function deleteUser(id: string): Promise<{ error?: string }> {
     revalidatePath("/admin/users");
     return {};
   } catch (e) {
-    return { error: String(e) };
+    if (e instanceof Error && e.message === "Unauthorized") return { error: "Unauthorized" };
+    console.error("deleteUser error:", e);
+    return { error: "Terjadi kesalahan. Coba lagi." };
   }
 }

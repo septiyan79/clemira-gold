@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateInvoiceNo } from "@/lib/invoice";
+import { requireAdmin } from "@/lib/api-auth";
 
 interface ConsignmentInput {
   supplierId: string;
@@ -25,6 +26,8 @@ interface LineInput {
 }
 
 export async function GET() {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const transactions = await prisma.transaction.findMany({
     include: {
       buyer: true,
@@ -77,24 +80,45 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const { buyerId, goldSpotPrice, transactedAt, notes, lines } = await req.json();
 
   if (!Array.isArray(lines) || lines.length === 0) {
     return Response.json({ error: "lines[] is required" }, { status: 400 });
   }
+  if (transactedAt !== undefined && transactedAt !== null && isNaN(Date.parse(transactedAt))) {
+    return Response.json({ error: "transactedAt is not a valid date" }, { status: 400 });
+  }
 
-  for (const line of lines as LineInput[]) {
+  for (let i = 0; i < (lines as LineInput[]).length; i++) {
+    const line = (lines as LineInput[])[i];
     if (!["own_stock", "consignment", "swap"].includes(line.fulfillmentMode)) {
-      return Response.json({ error: `invalid fulfillmentMode: ${line.fulfillmentMode}` }, { status: 400 });
+      return Response.json({ error: `lines[${i}]: invalid fulfillmentMode` }, { status: 400 });
+    }
+    if (typeof line.sellPrice !== "number" || !isFinite(line.sellPrice) || line.sellPrice <= 0) {
+      return Response.json({ error: `lines[${i}].sellPrice must be a positive number` }, { status: 400 });
     }
     if (line.fulfillmentMode !== "consignment" && !line.stockUnitId) {
-      return Response.json({ error: "stockUnitId required for own_stock and swap" }, { status: 400 });
+      return Response.json({ error: `lines[${i}]: stockUnitId required for own_stock and swap` }, { status: 400 });
     }
     if (line.fulfillmentMode === "consignment" && !line.consignment) {
-      return Response.json({ error: "consignment details required for consignment mode" }, { status: 400 });
+      return Response.json({ error: `lines[${i}]: consignment details required` }, { status: 400 });
+    }
+    if (line.fulfillmentMode === "consignment" && line.consignment) {
+      const sp = line.consignment.supplierPurchasePrice;
+      if (typeof sp !== "number" || !isFinite(sp) || sp <= 0) {
+        return Response.json({ error: `lines[${i}].consignment.supplierPurchasePrice must be a positive number` }, { status: 400 });
+      }
     }
     if (line.fulfillmentMode === "swap" && !line.swap?.replacementCost) {
-      return Response.json({ error: "swap.replacementCost required for swap mode" }, { status: 400 });
+      return Response.json({ error: `lines[${i}]: swap.replacementCost required` }, { status: 400 });
+    }
+    if (line.fulfillmentMode === "swap" && line.swap) {
+      const rc = line.swap.replacementCost;
+      if (typeof rc !== "number" || !isFinite(rc) || rc <= 0) {
+        return Response.json({ error: `lines[${i}].swap.replacementCost must be a positive number` }, { status: 400 });
+      }
     }
   }
 

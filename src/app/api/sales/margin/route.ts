@@ -1,7 +1,10 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function GET(req: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const { searchParams } = req.nextUrl;
   const from = searchParams.get("from");
   const to = searchParams.get("to");

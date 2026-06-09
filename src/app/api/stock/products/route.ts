@@ -1,7 +1,10 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function GET(req: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const brand = req.nextUrl.searchParams.get("brand");
   const series = req.nextUrl.searchParams.get("series");
 
@@ -19,6 +22,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const { sku, name, weightGram, purity, brand, series } = await req.json();
 
   if (!sku || !name || weightGram == null) {

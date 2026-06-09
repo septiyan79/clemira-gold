@@ -1,7 +1,10 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function GET(req: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const open           = req.nextUrl.searchParams.get("open") === "true";
   const originalUnitId = req.nextUrl.searchParams.get("originalUnitId");
 

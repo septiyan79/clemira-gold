@@ -1,5 +1,31 @@
 # Technical Decisions
 
+## Security
+
+### `requireAdmin()` Helper for API Route Auth
+All API routes (both mutation and read) use a single `requireAdmin()` helper in `src/lib/api-auth.ts` instead of inline session checks. The function returns a `401 Response` if the request has no valid admin session, or `null` if auth passes. This pattern allows one-liner guards at the top of each handler with a consistent error shape.
+
+**Why:** Previously all API routes were completely unauthenticated — any request could read inventory, create transactions, or delete data. The layout auth guard only protects page rendering, not the underlying API.
+
+**Note:** Price endpoints (`/api/price/*`, `/api/chart-data`) are deliberately left public — they're used on the public landing page for price display.
+
+### Security Headers in `next.config.ts`
+`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security`, `Referrer-Policy`, and `Permissions-Policy` are applied globally via `headers()` in `next.config.ts`.
+
+**CSP not added** because Next.js apps rely on inline scripts and dynamic `nonce`-based CSP requires significant Next.js config — the risk/reward ratio is poor for this project's threat model.
+
+### DB-Based Account Lockout for Login Rate Limiting
+After 5 failed login attempts, the account is locked for 15 minutes. State is stored in `User.failedLoginAttempts` and `User.lockedUntil` — no Redis or external service needed.
+
+**Why:** Serverless deployment (Vercel) makes in-memory rate limiting ineffective across cold starts. The DB is the only persistent store available without adding infrastructure. This protects against credential stuffing with zero new dependencies.
+
+**Behavior:** Counter resets on lockout (5 attempts → lock, not 10 attempts → lock). Successful login resets both fields. The login page shows the same generic message whether credentials are wrong or the account is locked — no information leak about lockout state.
+
+### CRON_SECRET Must Be Explicitly Set
+`sync-harga` now guards against `process.env.CRON_SECRET` being undefined (which would make any `Authorization: Bearer undefined` request pass). The route returns 401 if the env var is missing entirely.
+
+---
+
 ## Database & ORM
 
 ### Prisma + Neon (serverless PostgreSQL)

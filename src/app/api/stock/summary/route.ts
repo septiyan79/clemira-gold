@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function GET() {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const units = await prisma.stockUnit.findMany({
     where: { status: "available" },
     include: {

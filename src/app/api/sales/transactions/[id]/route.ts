@@ -1,11 +1,14 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateInvoiceNo } from "@/lib/invoice";
+import { requireAdmin } from "@/lib/api-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
 // PATCH — konfirmasi pembayaran → generate kwitansi
 export async function PATCH(_req: NextRequest, { params }: Params) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const { id } = await params;
 
   const tx = await prisma.transaction.findUnique({
@@ -30,6 +33,8 @@ export async function PATCH(_req: NextRequest, { params }: Params) {
 
 // DELETE — hapus transaksi & pulihkan status stok
 export async function DELETE(_req: NextRequest, { params }: Params) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const { id } = await params;
 
   const tx = await prisma.transaction.findUnique({

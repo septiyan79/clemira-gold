@@ -1,12 +1,17 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function GET() {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const owners = await prisma.owner.findMany({ orderBy: { name: "asc" } });
   return Response.json(owners);
 }
 
 export async function POST(req: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const { name, type, notes } = await req.json();
 
   if (!name || !type) {

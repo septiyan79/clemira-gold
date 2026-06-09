@@ -221,8 +221,23 @@ Status reflects code that exists and is wired end-to-end.
 
 ---
 
+## Security
+
+- [x] Auth guard (`requireAdmin`) on all API mutation endpoints (POST/PATCH/DELETE)
+- [x] Auth guard on all sensitive GET endpoints (units, summary, swap-events, margin, transactions, purchase-orders, products, owners, counterparties)
+- [x] Security headers in `next.config.ts` (X-Frame-Options, X-Content-Type-Options, HSTS, Referrer-Policy, Permissions-Policy)
+- [x] CRON_SECRET undefined-bypass fix in `sync-harga` route
+- [x] Google Sheets row limit (10,000 max) to prevent memory exhaustion
+- [x] Input validation on `purchase-orders` POST (price > 0, date validity, required fields)
+- [x] Input validation on `transactions` POST (price > 0, date validity, per-line type checks)
+- [x] Error messages in `users/actions.ts` sanitized — Prisma errors no longer leaked to client
+- [x] Helper `src/lib/api-auth.ts` — single source of truth for admin auth check
+
+---
+
 ## Not Yet Implemented / Known Gaps
 
+- [x] Rate limiting on login — account lockout after 5 failed attempts, 15-min cooldown (DB-based, no Redis needed)
 - [ ] Consignment settlement workflow (mark ConsignmentLine as settled, pay supplier)
 - [ ] Ownership transfer UI (OwnershipTransfer model exists but no admin page)
 - [ ] Reserved status usage (StockUnit.status='reserved' not used in any flow)

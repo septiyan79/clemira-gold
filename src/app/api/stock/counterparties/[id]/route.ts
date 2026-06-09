@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/api-auth";
 
 const VALID_ROLES = ["buyer", "supplier"];
 
@@ -7,6 +8,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const { id } = await params;
   const cp = await prisma.counterparty.findUnique({ where: { id } });
   if (!cp) return Response.json({ error: "Not found" }, { status: 404 });
@@ -17,6 +20,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const { id } = await params;
   const body = await req.json();
   const { name, type, phone, notes, addRole } = body;

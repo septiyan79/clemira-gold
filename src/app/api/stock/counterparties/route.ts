@@ -1,9 +1,12 @@
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/api-auth";
 
 const VALID_ROLES = ["buyer", "supplier"];
 
 export async function GET(req: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const role = req.nextUrl.searchParams.get("role"); // filter by role in type array
   const q    = req.nextUrl.searchParams.get("q");    // name search (for combobox)
 
@@ -20,6 +23,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   const { name, type, phone, notes } = await req.json();
 
   if (!name || !Array.isArray(type) || type.length === 0) {

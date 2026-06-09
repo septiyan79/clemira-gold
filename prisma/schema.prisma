@@ -7,14 +7,16 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  password   String?
-  name       String?
-  role       String   @default("user")
-  membership String   @default("free")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  password            String?
+  name                String?
+  role                String    @default("user")
+  membership          String    @default("free")
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   accounts Account[]
   sessions Session[]
