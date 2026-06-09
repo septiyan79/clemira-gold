@@ -14,17 +14,17 @@ export async function GET(request: NextRequest) {
 
   const rows = await fetchHargaFromSheets();
 
-  // Default: hanya sync tanggal terbaru (~10 baris)
-  // ?full=true: sync semua history
+  // Default: sync semua tanggal yang belum ada di DB (catch-up jika cron miss)
+  // ?full=true: sync ulang semua history (upsert idempotent)
   let rowsToSync = rows;
   if (!fullSync) {
-    const latestDate = rows.reduce(
-      (max, row) => (row.tanggal > max ? row.tanggal : max),
-      new Date(0)
-    );
-    rowsToSync = rows.filter(
-      (row) => row.tanggal.getTime() === latestDate.getTime()
-    );
+    const latestInDb = await prisma.hargaAntam.findFirst({
+      orderBy: { tanggal: 'desc' },
+      select: { tanggal: true },
+    });
+    if (latestInDb) {
+      rowsToSync = rows.filter(row => row.tanggal > latestInDb.tanggal);
+    }
   }
 
   let synced = 0;

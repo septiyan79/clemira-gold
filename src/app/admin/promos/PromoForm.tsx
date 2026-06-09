@@ -102,8 +102,8 @@ function RowCard({
       </div>
 
       {/* Line 1: Nama, Gramasi, Badge */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
-        <div>
+      <div className="pf-g1">
+        <div className="pf-g1-nama">
           <label style={lbl}>Nama Produk *</label>
           <input
             value={row.nama}
@@ -141,7 +141,7 @@ function RowCard({
       </div>
 
       {/* Line 2: Harga, Stok, Kondisi */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 0.7fr 2fr", gap: 12, marginBottom: 12 }}>
+      <div className="pf-g2">
         <div>
           <label style={lbl}>Harga Jual (Rp) *</label>
           <input
@@ -163,7 +163,7 @@ function RowCard({
             style={inp}
           />
         </div>
-        <div>
+        <div className="pf-g2-kondisi">
           <label style={lbl}>Kondisi Fisik</label>
           <input
             value={row.kondisi}
@@ -175,7 +175,7 @@ function RowCard({
       </div>
 
       {/* Line 3: Deskripsi, Tags */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
+      <div className="pf-g3">
         <div>
           <label style={lbl}>Deskripsi</label>
           <textarea
@@ -276,10 +276,22 @@ export default function PromoForm() {
             background: "rgba(0,0,0,.78)",
             zIndex: 1000,
             overflowY: "auto",
-            padding: "40px 16px",
+            padding: "16px 12px",
           }}
           onClick={e => { if (e.target === e.currentTarget) handleClose(); }}
         >
+          <style>{`
+            .pf-g1 { display:grid; grid-template-columns:2fr 1fr 1fr; gap:12px; margin-bottom:12px; }
+            .pf-g2 { display:grid; grid-template-columns:1fr 0.7fr 2fr; gap:12px; margin-bottom:12px; }
+            .pf-g3 { display:grid; grid-template-columns:2fr 1fr; gap:12px; }
+            @media (max-width:640px) {
+              .pf-g1 { grid-template-columns:1fr 1fr; }
+              .pf-g1-nama { grid-column:1/3; }
+              .pf-g2 { grid-template-columns:1fr 1fr; }
+              .pf-g2-kondisi { grid-column:1/3; }
+              .pf-g3 { grid-template-columns:1fr; }
+            }
+          `}</style>
           <div style={{
             background: "#1E1A14",
             border: "1px solid rgba(201,168,76,.25)",
@@ -295,7 +307,7 @@ export default function PromoForm() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              padding: "20px 24px",
+              padding: "16px",
               borderBottom: "1px solid rgba(201,168,76,.12)",
             }}>
               <h2 className="fd" style={{ fontSize: "1.25rem", color: "#EDE8DE", fontWeight: 400, margin: 0 }}>
@@ -311,7 +323,7 @@ export default function PromoForm() {
             </div>
 
             {/* Rows */}
-            <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 14 }}>
               {rows.map((row, idx) => (
                 <RowCard
                   key={row.key}
@@ -345,7 +357,7 @@ export default function PromoForm() {
 
             {/* Footer */}
             <div style={{
-              padding: "16px 24px",
+              padding: "14px 16px",
               borderTop: "1px solid rgba(201,168,76,.12)",
               display: "flex",
               justifyContent: "space-between",
