@@ -27,6 +27,7 @@ import {
   UserCog,
   ChevronDown,
   BarChart2,
+  CircleUser,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -101,8 +102,14 @@ const menuGroups: MenuGroup[] = [
   {
     label: "Master Data",
     items: [
-      { href: "/admin/counterparties", icon: Users,   label: "Counterparty"    },
-      { href: "/admin/users",          icon: UserCog, label: "User Management" },
+      { href: "/admin/counterparties", icon: Users,      label: "Counterparty"    },
+      { href: "/admin/users",          icon: UserCog,    label: "User Management" },
+    ],
+  },
+  {
+    label: "Akun",
+    items: [
+      { href: "/admin/account", icon: CircleUser, label: "Akun Saya" },
     ],
   },
 ];

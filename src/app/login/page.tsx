@@ -119,6 +119,12 @@ export default function LoginPage() {
             >
               {loading ? "Memproses..." : "Masuk →"}
             </button>
+
+            <div style={{ textAlign: "center" }}>
+              <Link href="/forgot-password" style={{ fontSize: "13px", color: "var(--muted)", textDecoration: "none" }}>
+                Lupa password?
+              </Link>
+            </div>
           </form>
 
           <div
@@ -131,7 +137,7 @@ export default function LoginPage() {
           >
             <p style={{ fontSize: "13px", color: "var(--muted)" }}>
               Belum punya akun?{" "}
-              <Link href="/" style={{ color: "var(--gold)", textDecoration: "none", fontWeight: 500 }}>
+              <Link href="/register" style={{ color: "var(--gold)", textDecoration: "none", fontWeight: 500 }}>
                 Daftar Sekarang
               </Link>
             </p>
