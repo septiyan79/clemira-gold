@@ -9,6 +9,12 @@ Status reflects code that exists and is wired end-to-end.
 - [x] Session via JWT (NextAuth)
 - [x] Admin role guard on all `/admin/*` routes
 - [x] Redirect to `/login` if unauthenticated or non-admin
+- [x] Public user self-registration (`/register`) — role=user, membership=free
+- [x] Forgot password flow (`/forgot-password` → email link → `/reset-password?token=`)
+- [x] Token-based password reset — one-time use, 1-hour expiry, clears lockout on success
+- [x] Rate limit on reset request — blocks new token if one was created < 5 min ago
+- [x] Self-service change password (`/admin/account`) — verifies current password before update
+- [x] Transactional email via Resend (`src/lib/email.ts`) — branded HTML template
 
 ---
 
@@ -180,12 +186,16 @@ Status reflects code that exists and is wired end-to-end.
 ### Users (`/admin/users`)
 - [x] Admin user management
 
+### Akun Saya (`/admin/account`)
+- [x] Tampil info akun: nama, email, role, membership
+- [x] Form ganti password (verifikasi password lama sebelum update)
+
 ---
 
 ## Navigation & UI
 
 ### Sidebar
-- [x] Group-based navigation (Home, Produk, Harga Antam, Stok, Transaksi, Laporan, Master Data)
+- [x] Group-based navigation (Home, Produk, Harga Antam, Stok, Transaksi, Laporan, Master Data, Akun)
 - [x] Active state highlighting (URL-aware, including `?tab=` params)
 - [x] Collapsible submenu groups (Harga, Catat Transaksi)
 - [x] Outstanding swap count badge on "Outstanding Swaps" item
@@ -241,7 +251,7 @@ Status reflects code that exists and is wired end-to-end.
 - [ ] Consignment settlement workflow (mark ConsignmentLine as settled, pay supplier)
 - [ ] Ownership transfer UI (OwnershipTransfer model exists but no admin page)
 - [ ] Reserved status usage (StockUnit.status='reserved' not used in any flow)
-- [ ] User registration / invite flow (users must be created directly in DB)
+- [x] User self-registration flow (`/register`) — public, role=user by default
 - [ ] Gold spot price auto-capture on transaction (field exists, not yet populated automatically)
 - [ ] Multi-line consignment per transaction via UI (form only supports single line)
 - [ ] Condition field still in DB and display (removed from forms but column remains)

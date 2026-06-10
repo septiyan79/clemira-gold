@@ -14,6 +14,7 @@
 | PDF | jsPDF + html2canvas | 4.2.1 / 1.4.1 | Invoice export |
 | QR Code | qrcode | 1.5.4 | On invoices |
 | Google API | googleapis | 171.4.0 | Price sync from Sheets |
+| Email | Resend | latest | Transactional email (password reset) |
 | Analytics | @vercel/analytics | 2.0.1 | |
 | Deployment | Vercel | — | Inferred from config |
 
@@ -37,9 +38,13 @@ clemira-gold/
     ├── app/
     │   ├── (public)/            # Landing pages (public, no auth)
     │   ├── login/               # Login page
+    │   ├── register/            # Public self-registration
+    │   ├── forgot-password/     # Request password reset email
+    │   ├── reset-password/      # Token-based password reset
     │   ├── admin/               # Admin panel (auth-gated)
     │   │   ├── layout.tsx       # Auth guard + outstanding swap count
     │   │   ├── page.tsx         # Dashboard
+    │   │   ├── account/         # Self-service account & change password
     │   │   ├── products/        # Product SKU management
     │   │   ├── stock/
     │   │   │   ├── page.tsx     # Stock overview
@@ -60,7 +65,7 @@ clemira-gold/
     │   │   ├── counterparties/  # Buyer/supplier contacts
     │   │   └── users/           # User management
     │   └── api/
-    │       ├── auth/            # NextAuth handler
+    │       ├── auth/            # NextAuth handler + register/forgot-password/reset-password
     │       ├── sync-harga/      # Cron: sync Antam prices
     │       ├── price/           # Price queries (daily/monthly/yearly/predict)
     │       ├── chart-data/      # Time-series chart data
@@ -76,6 +81,8 @@ clemira-gold/
         ├── prisma.ts            # Prisma client with Neon adapter
         ├── auth.ts              # NextAuth config
         ├── auth.config.ts       # JWT callbacks, session strategy
+        ├── api-auth.ts          # requireAdmin() helper
+        ├── email.ts             # Resend client + sendPasswordResetEmail()
         ├── google-sheets.ts     # Fetch prices from Google Sheets
         ├── predict.ts           # Holt's exponential smoothing
         └── invoice.ts           # Sequential invoice number generator
@@ -87,6 +94,7 @@ clemira-gold/
 
 ```
 User ──────────────────────────────────── (auth only)
+  └── PasswordResetToken[]              (one-time reset tokens, 1h expiry)
 
 HargaAntam (tanggal, gramasi, harga)     (gold prices from Antam)
 

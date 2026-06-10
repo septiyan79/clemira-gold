@@ -21,6 +21,23 @@ After 5 failed login attempts, the account is locked for 15 minutes. State is st
 
 **Behavior:** Counter resets on lockout (5 attempts → lock, not 10 attempts → lock). Successful login resets both fields. The login page shows the same generic message whether credentials are wrong or the account is locked — no information leak about lockout state.
 
+### Resend for Transactional Email
+Resend (`resend` npm package) is used for sending password reset emails via `src/lib/email.ts`. Plain HTML template (not `@react-email/components`) to avoid dependency conflicts with Next.js.
+
+**Why:** Resend has the simplest API for Next.js serverless (single `resend.emails.send()` call), generous free tier (3,000/month), and no SMTP configuration needed. Alternatives (Nodemailer, SendGrid) require more setup for equivalent reliability.
+
+**Env vars required:** `RESEND_API_KEY`, `EMAIL_FROM` (verified domain or `onboarding@resend.dev` for dev), `NEXT_PUBLIC_BASE_URL`.
+
+### Forgot Password Always Returns 200
+`POST /api/auth/forgot-password` returns HTTP 200 regardless of whether the email exists in the database. A rate limit (no new token if one was created < 5 minutes ago) is enforced only after the user is found, so the rate limit itself is not observable from outside.
+
+**Why:** Returning a different status for unknown vs. known emails leaks whether an email is registered — an account enumeration vulnerability. The UI shows a static message regardless of response.
+
+### PasswordResetToken — One-Time Use, 1-Hour Expiry
+Reset tokens are stored in a dedicated `PasswordResetToken` table with `usedAt` and `expiresAt` fields. On use: `usedAt` is set (not deleted) so the token row persists as an audit trail. Old unused tokens for the same user are deleted when a new one is generated (cleanup).
+
+**Why:** Keeping the row after use (vs. deleting) allows debugging if a user reports token issues. Deleting old tokens on new request prevents token accumulation and forces the user to use only the most recent link.
+
 ### CRON_SECRET Must Be Explicitly Set
 `sync-harga` now guards against `process.env.CRON_SECRET` being undefined (which would make any `Authorization: Bearer undefined` request pass). The route returns 401 if the env var is missing entirely.
 
