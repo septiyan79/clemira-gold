@@ -175,7 +175,7 @@ export default function ResetPasswordPage() {
         </Suspense>
 
         <p style={{ textAlign: "center", fontSize: "12px", color: "#3A342A", marginTop: "20px" }}>
-          © 2026 Clemira Gold · Diawasi OJK
+          © 2026 Clemira Gold
         </p>
       </div>
     </main>

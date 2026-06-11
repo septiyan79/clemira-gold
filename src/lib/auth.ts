@@ -23,10 +23,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           select: {
             id: true, email: true, name: true, role: true, membership: true,
             password: true, failedLoginAttempts: true, lockedUntil: true,
+            emailVerified: true,
           },
         });
 
         if (!user || !user.password) return null;
+
+        // Block if email not verified
+        if (!user.emailVerified) return null;
 
         // Block if account is locked
         if (user.lockedUntil && user.lockedUntil > new Date()) {

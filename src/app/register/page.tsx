@@ -73,21 +73,20 @@ export default function RegisterPage() {
         }}>
           {done ? (
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "40px", marginBottom: "16px" }}>✓</div>
-              <p className="section-label" style={{ marginBottom: "8px" }}>Berhasil</p>
+              <div style={{ fontSize: "40px", marginBottom: "16px" }}>✉</div>
+              <p className="section-label" style={{ marginBottom: "8px" }}>Satu Langkah Lagi</p>
               <h1 className="fd" style={{ fontSize: "1.6rem", fontWeight: 300, color: "var(--text)", marginBottom: "16px" }}>
-                Akun Berhasil Dibuat
+                Cek Email Anda
               </h1>
-              <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "28px" }}>
-                Silakan masuk menggunakan email dan password Anda.
+              <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "8px", lineHeight: 1.6 }}>
+                Kami mengirim link verifikasi ke inbox Anda.
               </p>
-              <button
-                className="btn-gold"
-                style={{ width: "100%" }}
-                onClick={() => router.push("/login")}
-              >
-                Masuk Sekarang →
-              </button>
+              <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "28px", lineHeight: 1.6 }}>
+                Klik link tersebut untuk mengaktifkan akun, lalu Anda bisa masuk.
+              </p>
+              <Link href="/login" style={{ color: "var(--gold)", fontSize: "14px", textDecoration: "none", fontWeight: 500 }}>
+                Sudah verifikasi? Masuk →
+              </Link>
             </div>
           ) : (
             <>
@@ -190,7 +189,7 @@ export default function RegisterPage() {
         </div>
 
         <p style={{ textAlign: "center", fontSize: "12px", color: "#3A342A", marginTop: "20px" }}>
-          © 2026 Clemira Gold · Diawasi OJK
+          © 2026 Clemira Gold
         </p>
       </div>
     </main>

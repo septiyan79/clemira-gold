@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
 
 const links = [
@@ -13,29 +13,133 @@ const links = [
   { href: "/about", label: "Tentang" },
 ];
 
-function AuthButton({ style }: { style?: React.CSSProperties }) {
+function ProfileDropdown({ mobile }: { mobile?: boolean }) {
   const { data: session, status } = useSession();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   if (status === "loading") return null;
 
   if (!session) {
     return (
-      <Link href="/login" className="btn-gold" style={style}>Masuk</Link>
+      <Link href="/login" className="btn-gold" style={mobile ? { width: 200, textAlign: "center" } : { padding: "10px 22px", fontSize: 14 }}>
+        Masuk
+      </Link>
     );
   }
 
   const role = (session.user as { role?: string })?.role;
+  const name = session.user?.name ?? session.user?.email ?? "Akun";
+  const initial = name.charAt(0).toUpperCase();
 
-  if (role === "admin") {
+  if (mobile) {
     return (
-      <Link href="/admin" className="btn-gold" style={style}>Admin Panel</Link>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+        <span style={{ fontSize: 15, color: "var(--text)" }}>{name}</span>
+        {role === "admin" && (
+          <Link href="/admin" className="btn-gold" style={{ width: 200, textAlign: "center" }} onClick={() => setOpen(false)}>
+            Admin Panel
+          </Link>
+        )}
+        <button
+          onClick={() => signOut({ callbackUrl: "/" })}
+          style={{
+            width: 200, padding: "12px 0", background: "transparent",
+            border: "1px solid rgba(201,168,76,.25)", color: "var(--muted)",
+            borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 14,
+          }}
+        >
+          Keluar
+        </button>
+      </div>
     );
   }
 
   return (
-    <Link href="/profile" className="btn-outline" style={style}>
-      {session.user?.name ?? "Profil"}
-    </Link>
+    <div ref={ref} style={{ position: "relative" }}>
+      {/* Trigger */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: "flex", alignItems: "center", gap: 8,
+          background: "transparent", border: "1px solid rgba(201,168,76,.25)",
+          borderRadius: 20, padding: "6px 12px 6px 6px",
+          cursor: "pointer", transition: "border-color .2s",
+        }}
+      >
+        {/* Avatar */}
+        <div style={{
+          width: 28, height: 28, borderRadius: "50%",
+          background: "linear-gradient(135deg, rgba(201,168,76,.3), rgba(201,168,76,.1))",
+          border: "1px solid rgba(201,168,76,.4)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 12, fontWeight: 600, color: "var(--gold)",
+        }}>
+          {initial}
+        </div>
+        <span style={{ fontSize: 13, color: "var(--text)", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {name}
+        </span>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transition: "transform .2s", transform: open ? "rotate(180deg)" : "none", opacity: 0.5 }}>
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="#EDE8DE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 8px)", right: 0,
+          background: "#1A1612", border: "1px solid rgba(201,168,76,.2)",
+          borderRadius: 10, minWidth: 180, overflow: "hidden",
+          boxShadow: "0 8px 32px rgba(0,0,0,.4)",
+          zIndex: 200,
+        }}>
+          {/* User info */}
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(201,168,76,.1)" }}>
+            <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 500 }}>{name}</div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{session.user?.email}</div>
+          </div>
+
+          {/* Menu items */}
+          {role === "admin" && (
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              style={{
+                display: "block", padding: "10px 16px", fontSize: 13,
+                color: "var(--gold)", textDecoration: "none",
+                transition: "background .15s",
+              }}
+              className="adm-tr-hover"
+            >
+              Admin Panel
+            </Link>
+          )}
+
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            style={{
+              display: "block", width: "100%", padding: "10px 16px",
+              fontSize: 13, color: "#9A8E7F", textAlign: "left",
+              background: "transparent", border: "none", cursor: "pointer",
+              fontFamily: "inherit", transition: "background .15s",
+              borderTop: role === "admin" ? "1px solid rgba(201,168,76,.08)" : "none",
+            }}
+            className="adm-tr-hover"
+          >
+            Keluar
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -66,7 +170,7 @@ export default function Nav() {
                 </Link>
               );
             })}
-            <AuthButton style={{ padding: "10px 22px", fontSize: 14 }} />
+            <ProfileDropdown />
           </div>
 
           {/* Hamburger */}
@@ -92,7 +196,7 @@ export default function Nav() {
               <Link key={l.href} href={l.href} className={`nav-link-mob${active ? " active" : ""}`}>{l.label}</Link>
             );
           })}
-          <AuthButton style={{ width: 200, textAlign: "center" }} />
+          <ProfileDropdown mobile />
         </div>
       )}
 

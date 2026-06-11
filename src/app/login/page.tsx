@@ -27,7 +27,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (res?.error) {
-      setError("Email atau password salah.");
+      setError("Email atau password salah, atau email belum diverifikasi.");
     } else {
       router.push("/");
       router.refresh();
@@ -145,7 +145,7 @@ export default function LoginPage() {
         </div>
 
         <p style={{ textAlign: "center", fontSize: "12px", color: "#3A342A", marginTop: "20px" }} className="fu d3">
-          © 2026 Clemira Gold · Diawasi OJK
+          © 2026 Clemira Gold
         </p>
       </div>
     </main>
