@@ -117,21 +117,12 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
         .rcpt-table-scroll table { min-width: 360px; margin-bottom: 0; }
         .rcpt-table th, .rcpt-table td { border: 1px solid #e8e0d0; }
         .capitalize-words { text-transform: capitalize; }
-        .lunas-stamp {
+        .lunas-stamp-wrap {
           position: absolute;
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%) rotate(-20deg);
-          border: 3px solid rgba(34,139,34,0.12);
-          border-radius: 6px;
-          padding: 6px 14px;
-          font-size: 36px;
-          font-weight: 900;
-          color: rgba(34,139,34,0.09);
-          letter-spacing: 5px;
           pointer-events: none;
-          white-space: nowrap;
-          line-height: 1;
         }
         .receipt-area-wrapper { /* default: no special behavior */ }
         @media screen and (max-width: 600px) {
@@ -195,7 +186,13 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
         <div id="invoice-content" className="receipt-wrap" style={{ fontFamily: "'Segoe UI', sans-serif", color: "#333", position: "relative" }}>
 
           {/* Watermark LUNAS */}
-          <div className="lunas-stamp">LUNAS</div>
+          <div className="lunas-stamp-wrap">
+            <svg width="230" height="60" viewBox="0 0 230 60">
+              <rect x="1.5" y="1.5" width="227" height="57" rx="5" fill="none" stroke="rgba(34,139,34,0.12)" strokeWidth="3"/>
+              <text x="115" y="30" textAnchor="middle" dominantBaseline="middle"
+                fill="rgba(34,139,34,0.09)" fontFamily="'Segoe UI', sans-serif" fontSize="36" fontWeight="900" letterSpacing="5">LUNAS</text>
+            </svg>
+          </div>
 
           {/* ── Header ── */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, paddingBottom: 20, borderBottom: "2px solid #C9A84C" }}>
@@ -226,22 +223,11 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
 
           {/* ── Status LUNAS badge ── */}
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-            <div style={{
-              background: "#e8f5e9",
-              border: "1.5px solid #4CAF50",
-              borderRadius: 6,
-              padding: "6px 16px",
-              fontSize: 13,
-              fontWeight: 700,
-              color: "#2e7d32",
-              letterSpacing: 1,
-              lineHeight: 1,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}>
-              ✓ LUNAS
-            </div>
+            <svg width="112" height="26" viewBox="0 0 112 26" style={{ display: "block" }}>
+              <rect x="0.75" y="0.75" width="110.5" height="24.5" rx="5.25" fill="#e8f5e9" stroke="#4CAF50" strokeWidth="1.5"/>
+              <text x="56" y="13" textAnchor="middle" dominantBaseline="middle"
+                fill="#2e7d32" fontFamily="'Segoe UI', sans-serif" fontSize="13" fontWeight="700" letterSpacing="1">✓ LUNAS</text>
+            </svg>
           </div>
 
           {/* ── Penjual / Pembeli ── */}
