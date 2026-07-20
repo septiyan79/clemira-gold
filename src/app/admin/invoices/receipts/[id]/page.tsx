@@ -131,6 +131,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           letter-spacing: 5px;
           pointer-events: none;
           white-space: nowrap;
+          line-height: 1;
         }
         .receipt-area-wrapper { /* default: no special behavior */ }
         @media screen and (max-width: 600px) {
@@ -229,11 +230,15 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
               background: "#e8f5e9",
               border: "1.5px solid #4CAF50",
               borderRadius: 6,
-              padding: "4px 16px",
+              padding: "6px 16px",
               fontSize: 13,
               fontWeight: 700,
               color: "#2e7d32",
               letterSpacing: 1,
+              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
             }}>
               ✓ LUNAS
             </div>
