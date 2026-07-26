@@ -684,7 +684,7 @@ export default function TransactionForm() {
       }),
     });
     setBLoading(false);
-    if (res.ok) { router.push("/admin/stock/units"); return; }
+    if (res.ok) { router.refresh(); router.push("/admin/stock/units"); return; }
     const j = await res.json();
     setBError(j.error ?? "Gagal menyimpan");
   }
@@ -913,6 +913,7 @@ export default function TransactionForm() {
         setSwError(`Swap tercatat, tapi gagal mencatat unit pengganti: ${j.error ?? "error"}. Catat manual di tab Beli Stok.`);
         return;
       }
+      router.refresh();
       router.push("/admin/stock/units");
       return;
     }
