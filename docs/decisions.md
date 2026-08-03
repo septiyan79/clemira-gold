@@ -7,7 +7,13 @@ All API routes (both mutation and read) use a single `requireAdmin()` helper in 
 
 **Why:** Previously all API routes were completely unauthenticated — any request could read inventory, create transactions, or delete data. The layout auth guard only protects page rendering, not the underlying API.
 
-**Note:** Price endpoints (`/api/price/*`, `/api/chart-data`) are deliberately left public — they're used on the public landing page for price display.
+### `PriceView` Component Pattern for Price Pages
+Instead of passing render prop functions from Server Components (which violates Next.js RSC serialization rules), price pages (`page.tsx`, `monthly/page.tsx`, `yearly/page.tsx`) use `PriceView.tsx` as a Client Component wrapper. It handles the title, subtitle, sync header layout, and renders the active tab with `refreshKey` auto-reloading.
+
+
+### Google Sheets Row Limit (50,000 max)
+`fetchHargaFromSheets` row limit increased from 10,000 to 50,000 to accommodate historic gold price data accumulation (~20 rows/day).
+
 
 ### Security Headers in `next.config.ts`
 `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security`, `Referrer-Policy`, and `Permissions-Policy` are applied globally via `headers()` in `next.config.ts`.

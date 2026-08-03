@@ -6,7 +6,7 @@ import type { DailyData, DailyRow, PredictionData } from "./shared";
 import SharePriceButton from "./SharePriceButton";
 import PredictionCard from "./PredictionCard";
 
-export default function DailyTab() {
+export default function DailyTab({ refreshKey = 0 }: { refreshKey?: number }) {
   const [date, setDate]           = useState(todayWIB);
   const [data, setData]           = useState<DailyData | null>(null);
   const [loading, setLoading]     = useState(false);
@@ -20,7 +20,7 @@ export default function DailyTab() {
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchData(date); }, [date, fetchData]);
+  useEffect(() => { fetchData(date); }, [date, refreshKey, fetchData]);
 
   useEffect(() => {
     fetch("/api/price/predict")

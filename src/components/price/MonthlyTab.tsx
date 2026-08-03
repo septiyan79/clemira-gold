@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { MONTHS_ID, fmt, formatDateShort, DiffCell, ChangeCard, TableWrap, Th, Td, EmptyState, Spinner } from "./shared";
 import type { MonthlyData } from "./shared";
 
-export default function MonthlyTab() {
+export default function MonthlyTab({ refreshKey = 0 }: { refreshKey?: number }) {
   const now = new Date();
   const [year,  setYear]  = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -19,7 +19,7 @@ export default function MonthlyTab() {
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchData(year, month); }, [year, month, fetchData]);
+  useEffect(() => { fetchData(year, month); }, [year, month, refreshKey, fetchData]);
 
   const days     = data?.days ?? [];
   const lastSell = days.findLast(d => d.sell !== null)?.sell ?? null;

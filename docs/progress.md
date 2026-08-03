@@ -36,6 +36,7 @@ Status reflects code that exists and is wired end-to-end.
 - [x] Next-day price prediction (Holt's smoothing)
 - [x] Share price via WhatsApp (public landing page)
 - [x] Public price chart on landing page
+- [x] Sync & Full-Sync button with subtle link and subtitle ("Data terakhir: ...") on Daily, Monthly, and Yearly pages
 
 ---
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { MONTHS_ID, fmt, DiffCell, ChangeCard, TableWrap, Th, Td, EmptyState, Spinner } from "./shared";
 import type { YearlyData } from "./shared";
 
-export default function YearlyTab() {
+export default function YearlyTab({ refreshKey = 0 }: { refreshKey?: number }) {
   const [year,  setYear]  = useState(new Date().getFullYear());
   const [data,  setData]  = useState<YearlyData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,7 @@ export default function YearlyTab() {
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchData(year); }, [year, fetchData]);
+  useEffect(() => { fetchData(year); }, [year, refreshKey, fetchData]);
 
   const months   = data?.months ?? [];
   const hasData  = months.some(m => m.sell !== null);
