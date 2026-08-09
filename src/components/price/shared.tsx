@@ -27,6 +27,11 @@ export function fmt(n: number) {
   return "Rp " + n.toLocaleString("id-ID");
 }
 
+/** Number-only format (no "Rp" prefix) — for table body cells where header already shows (RP) */
+export function fmtNum(n: number) {
+  return n.toLocaleString("id-ID");
+}
+
 export function formatDateShort(iso: string) {
   return new Date(iso + "T00:00:00Z").toLocaleDateString("id-ID", {
     day: "numeric", month: "short", year: "numeric", timeZone: "UTC",
@@ -41,11 +46,11 @@ export function formatDateFull(iso: string) {
 
 export function DiffCell({ diff }: { diff: number | null }) {
   if (diff === null) return <span style={{ color: "#3A342A" }}>—</span>;
-  if (diff === 0)    return <span style={{ color: "#5A5045" }}>Rp 0</span>;
+  if (diff === 0)    return <span style={{ color: "#5A5045" }}>0</span>;
   const up = diff > 0;
   return (
     <span style={{ color: up ? "#4CAF50" : "#EF5350", fontSize: 13 }}>
-      {up ? "▲" : "▼"} {up ? "+" : "-"}Rp {Math.abs(diff).toLocaleString("id-ID")}
+      {up ? "▲" : "▼"} {up ? "+" : "-"}{Math.abs(diff).toLocaleString("id-ID")}
     </span>
   );
 }

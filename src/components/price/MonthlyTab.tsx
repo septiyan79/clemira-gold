@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MONTHS_ID, fmt, formatDateShort, DiffCell, ChangeCard, TableWrap, Th, Td, EmptyState, Spinner } from "./shared";
+import { MONTHS_ID, fmt, fmtNum, formatDateShort, DiffCell, ChangeCard, TableWrap, Th, Td, EmptyState, Spinner } from "./shared";
 import type { MonthlyData } from "./shared";
 
 export default function MonthlyTab({ refreshKey = 0 }: { refreshKey?: number }) {
@@ -55,19 +55,19 @@ export default function MonthlyTab({ refreshKey = 0 }: { refreshKey?: number }) 
           <thead>
             <tr>
               <Th>Tanggal</Th>
-              <Th right>Harga Jual 1g</Th>
-              <Th right>Perubahan</Th>
-              <Th right>Buyback 1g</Th>
-              <Th right>Perubahan</Th>
+              <Th right>Harga Jual 1g (Rp)</Th>
+              <Th right>Perubahan (Rp)</Th>
+              <Th right>Buyback 1g (Rp)</Th>
+              <Th right>Perubahan (Rp)</Th>
             </tr>
           </thead>
           <tbody>
             {days.map((d, i) => (
               <tr key={d.date}>
                 <Td gold>{formatDateShort(d.date)}</Td>
-                <Td right>{d.sell ? fmt(d.sell) : "—"}</Td>
+                <Td right>{d.sell ? fmtNum(d.sell) : "—"}</Td>
                 <Td right><DiffCell diff={d.sell !== null && prevSells[i] !== null ? d.sell - prevSells[i]! : null} /></Td>
-                <Td right>{d.bb ? fmt(d.bb) : "—"}</Td>
+                <Td right>{d.bb ? fmtNum(d.bb) : "—"}</Td>
                 <Td right><DiffCell diff={d.bb !== null && prevBbs[i] !== null ? d.bb - prevBbs[i]! : null} /></Td>
               </tr>
             ))}
@@ -76,9 +76,9 @@ export default function MonthlyTab({ refreshKey = 0 }: { refreshKey?: number }) 
             <tfoot>
               <tr style={{ borderTop: "1px solid rgba(201,168,76,.2)" }}>
                 <td style={{ padding: "12px 14px", fontSize: 11, color: "#5A5045" }}>Terakhir</td>
-                <td style={{ padding: "12px 14px", textAlign: "right", color: "var(--gold)", fontWeight: 600 }}>{lastSell ? fmt(lastSell) : "—"}</td>
+                <td style={{ padding: "12px 14px", textAlign: "right", color: "var(--gold)", fontWeight: 600 }}>{lastSell ? fmtNum(lastSell) : "—"}</td>
                 <td />
-                <td style={{ padding: "12px 14px", textAlign: "right", color: "var(--gold)", fontWeight: 600 }}>{lastBb ? fmt(lastBb) : "—"}</td>
+                <td style={{ padding: "12px 14px", textAlign: "right", color: "var(--gold)", fontWeight: 600 }}>{lastBb ? fmtNum(lastBb) : "—"}</td>
                 <td />
               </tr>
             </tfoot>

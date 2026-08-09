@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MONTHS_ID, fmt, DiffCell, ChangeCard, TableWrap, Th, Td, EmptyState, Spinner } from "./shared";
+import { MONTHS_ID, fmt, fmtNum, DiffCell, ChangeCard, TableWrap, Th, Td, EmptyState, Spinner } from "./shared";
 import type { YearlyData } from "./shared";
 
 export default function YearlyTab({ refreshKey = 0 }: { refreshKey?: number }) {
@@ -47,19 +47,19 @@ export default function YearlyTab({ refreshKey = 0 }: { refreshKey?: number }) {
           <thead>
             <tr>
               <Th>Bulan</Th>
-              <Th right>Harga Jual 1g</Th>
-              <Th right>Perubahan</Th>
-              <Th right>Buyback 1g</Th>
-              <Th right>Perubahan</Th>
+              <Th right>Harga Jual 1g (Rp)</Th>
+              <Th right>Perubahan (Rp)</Th>
+              <Th right>Buyback 1g (Rp)</Th>
+              <Th right>Perubahan (Rp)</Th>
             </tr>
           </thead>
           <tbody>
             {months.map((m, i) => (
               <tr key={m.month} style={{ opacity: m.sell === null && m.bb === null ? 0.35 : 1 }}>
                 <Td gold>{MONTHS_ID[m.month]}</Td>
-                <Td right>{m.sell ? fmt(m.sell) : "—"}</Td>
+                <Td right>{m.sell ? fmtNum(m.sell) : "—"}</Td>
                 <Td right><DiffCell diff={m.sell !== null && prevSells[i] !== null ? m.sell - prevSells[i]! : null} /></Td>
-                <Td right>{m.bb ? fmt(m.bb) : "—"}</Td>
+                <Td right>{m.bb ? fmtNum(m.bb) : "—"}</Td>
                 <Td right><DiffCell diff={m.bb !== null && prevBbs[i] !== null ? m.bb - prevBbs[i]! : null} /></Td>
               </tr>
             ))}

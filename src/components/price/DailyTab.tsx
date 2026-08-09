@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { todayWIB, fmt, formatDateShort, formatDateFull, DiffCell, TableWrap, Th, Td, EmptyState, Spinner } from "./shared";
+import { todayWIB, fmt, fmtNum, formatDateShort, formatDateFull, DiffCell, TableWrap, Th, Td, EmptyState, Spinner } from "./shared";
 import type { DailyData, DailyRow, PredictionData } from "./shared";
 import SharePriceButton from "./SharePriceButton";
 import PredictionCard from "./PredictionCard";
@@ -129,8 +129,8 @@ export default function DailyTab({ refreshKey = 0 }: { refreshKey?: number }) {
           <thead>
             <tr>
               <Th>Gramasi</Th>
-              <Th right>Harga Jual</Th>
-              <Th right>Perubahan Jual</Th>
+              <Th right>Harga Jual (Rp)</Th>
+              <Th right>Perubahan Jual (Rp)</Th>
             </tr>
           </thead>
           <tbody>
@@ -140,7 +140,7 @@ export default function DailyTab({ refreshKey = 0 }: { refreshKey?: number }) {
               return (
                 <tr key={gram}>
                   <Td gold>{gram} gr</Td>
-                  <Td right>{e.sell ? fmt(e.sell.harga) : "—"}</Td>
+                  <Td right>{e.sell ? fmtNum(e.sell.harga) : "—"}</Td>
                   <Td right><DiffCell diff={sellDiff} /></Td>
                 </tr>
               );
